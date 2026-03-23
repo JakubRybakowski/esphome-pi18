@@ -24,11 +24,13 @@ uint16_t pi18_crc(const uint8_t *data, size_t len) {
   return crc;
 }
 
+#ifdef USE_BUTTON
 // ─── PI18Button ───────────────────────────────────────────────────────────────
 void PI18Button::press_action() {
   if (!command_.empty() && parent_ != nullptr)
     parent_->send_set_command(command_);
 }
+#endif  // USE_BUTTON
 
 // ─── PI18Switch ───────────────────────────────────────────────────────────────
 void PI18Switch::write_state(bool state) {
@@ -39,6 +41,7 @@ void PI18Switch::write_state(bool state) {
   }
 }
 
+#ifdef USE_SELECT
 // ─── PI18Select ───────────────────────────────────────────────────────────────
 void PI18Select::control(const std::string &value) {
   auto it = mappings_.find(value);
@@ -58,7 +61,9 @@ void PI18Select::control(const std::string &value) {
   }
   this->publish_state(value);
 }
+#endif  // USE_SELECT
 
+#ifdef USE_NUMBER
 // ─── PI18Number ───────────────────────────────────────────────────────────────
 void PI18Number::control(float value) {
   if (parent_ == nullptr) return;
@@ -133,6 +138,7 @@ void PI18Component::handle_redischarge_voltage(float v) {
     send_set_command(buf);
   }
 }
+#endif  // USE_NUMBER
 
 // ─── Setup ────────────────────────────────────────────────────────────────────
 void PI18Component::setup() {
@@ -498,23 +504,27 @@ void PI18Component::decode_piri_(const std::vector<std::string> &f) {
   float recharge_v = parse_float_(f[8], 0.1f);
   if (battery_recharge_voltage_sensor_ != nullptr)
     battery_recharge_voltage_sensor_->publish_state(recharge_v);
+#ifdef USE_NUMBER
   if (!stored_recharge_valid_) {
     stored_recharge_voltage_ = recharge_v;
     stored_recharge_valid_ = true;
   }
   if (battery_recharge_voltage_number_ != nullptr)
     battery_recharge_voltage_number_->publish_state(recharge_v);
+#endif
 
   // f[9] = battery redischarge voltage
   float redischarge_v = parse_float_(f[9], 0.1f);
   if (battery_redischarge_voltage_sensor_ != nullptr)
     battery_redischarge_voltage_sensor_->publish_state(redischarge_v);
+#ifdef USE_NUMBER
   if (!stored_redischarge_valid_) {
     stored_redischarge_voltage_ = redischarge_v;
     stored_redischarge_valid_ = true;
   }
   if (battery_redischarge_voltage_number_ != nullptr)
     battery_redischarge_voltage_number_->publish_state(redischarge_v);
+#endif
 
   if (battery_under_voltage_sensor_ != nullptr)
     battery_under_voltage_sensor_->publish_state(parse_float_(f[10], 0.1f));
@@ -523,23 +533,27 @@ void PI18Component::decode_piri_(const std::vector<std::string> &f) {
   float bulk_v = parse_float_(f[11], 0.1f);
   if (battery_bulk_voltage_sensor_ != nullptr)
     battery_bulk_voltage_sensor_->publish_state(bulk_v);
+#ifdef USE_NUMBER
   if (!stored_bulk_valid_) {
     stored_bulk_voltage_ = bulk_v;
     stored_bulk_valid_ = true;
   }
   if (battery_bulk_voltage_number_ != nullptr)
     battery_bulk_voltage_number_->publish_state(bulk_v);
+#endif
 
   // f[12] = float voltage
   float float_v = parse_float_(f[12], 0.1f);
   if (battery_float_voltage_sensor_ != nullptr)
     battery_float_voltage_sensor_->publish_state(float_v);
+#ifdef USE_NUMBER
   if (!stored_float_valid_) {
     stored_float_voltage_ = float_v;
     stored_float_valid_ = true;
   }
   if (battery_float_voltage_number_ != nullptr)
     battery_float_voltage_number_->publish_state(float_v);
+#endif
   if (battery_type_sensor_ != nullptr)
     battery_type_sensor_->publish_state(parse_float_(f[13]));
   if (max_ac_charging_current_sensor_ != nullptr)

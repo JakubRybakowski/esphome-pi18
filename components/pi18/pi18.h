@@ -7,9 +7,15 @@
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/switch/switch.h"
+#ifdef USE_NUMBER
 #include "esphome/components/number/number.h"
+#endif
+#ifdef USE_SELECT
 #include "esphome/components/select/select.h"
+#endif
+#ifdef USE_BUTTON
 #include "esphome/components/button/button.h"
+#endif
 
 #include <map>
 #include <vector>
@@ -38,6 +44,7 @@ class PI18Switch : public switch_::Switch {
   std::string command_off_;
 };
 
+#ifdef USE_BUTTON
 // ─── PI18 button helper ───────────────────────────────────────────────────────
 class PI18Button : public button::Button {
  public:
@@ -49,7 +56,9 @@ class PI18Button : public button::Button {
   PI18Component *parent_{nullptr};
   std::string command_;
 };
+#endif  // USE_BUTTON
 
+#ifdef USE_SELECT
 // ─── PI18 select helper ───────────────────────────────────────────────────────
 class PI18Select : public select::Select, public Component {
  public:
@@ -68,7 +77,9 @@ class PI18Select : public select::Select, public Component {
   std::map<std::string, std::string> mappings_;
   bool multi_unit_{false};
 };
+#endif  // USE_SELECT
 
+#ifdef USE_NUMBER
 // ─── PI18 number helper ───────────────────────────────────────────────────────
 // pair_role: 0=simple  1=bulk_voltage  2=float_voltage
 //            3=recharge_voltage  4=redischarge_voltage
@@ -87,6 +98,7 @@ class PI18Number : public number::Number, public Component {
   float multiplier_{1.0f};
   uint8_t pair_role_{0};
 };
+#endif  // USE_NUMBER
 
 // ─── Main component ───────────────────────────────────────────────────────────
 class PI18Component : public uart::UARTDevice, public PollingComponent {
@@ -106,6 +118,7 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   // ── Send a raw PI18 set command (used by switches/selects/numbers) ──────────
   void send_set_command(const std::string &cmd);
 
+#ifdef USE_NUMBER
   // ── Paired voltage handlers (called from PI18Number) ────────────────────────
   void handle_bulk_voltage(float v);
   void handle_float_voltage(float v);
@@ -118,6 +131,7 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   void set_battery_recharge_voltage_number(number::Number *n) { battery_recharge_voltage_number_ = n; }
   void set_battery_redischarge_voltage_number(number::Number *n) { battery_redischarge_voltage_number_ = n; }
   void set_battery_cutoff_voltage_number(number::Number *n) { battery_cutoff_voltage_number_ = n; }
+#endif  // USE_NUMBER
 
   // ── ^P005GS sensors ─────────────────────────────────────────────────────────
   SUB_SENSOR(grid_voltage)
@@ -267,6 +281,7 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   // Command queue for set commands (fire-and-forget)
   std::vector<std::string> set_queue_;
 
+#ifdef USE_NUMBER
   // ── Number entity pointers ───────────────────────────────────────────────────
   number::Number *battery_bulk_voltage_number_{nullptr};
   number::Number *battery_float_voltage_number_{nullptr};
@@ -285,6 +300,7 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   float stored_redischarge_voltage_{0.0f};
   bool stored_recharge_valid_{false};
   bool stored_redischarge_valid_{false};
+#endif  // USE_NUMBER
 
   // Helpers
   void build_poll_commands_();
