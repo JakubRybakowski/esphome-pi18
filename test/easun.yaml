@@ -1,0 +1,265 @@
+substitutions:
+  name: "easun"
+  tx_pin: GPIO1
+  rx_pin: GPIO3
+
+external_components:
+  - source: github://JakubRybakowski/esphome-pi18@main
+    refresh: 0s
+
+esphome:
+  name: ${name}
+  friendly_name: Easun
+
+esp8266:
+  board: esp07s
+
+logger:
+  level: DEBUG
+  baud_rate: 0
+
+api:
+  encryption:
+    key: !secret api_key
+
+ota:
+  platform: esphome
+  password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  min_auth_mode: WPA2
+  use_address: 192.168.107.100
+  manual_ip:
+    static_ip: 192.168.107.100
+    gateway: 192.168.107.1
+    subnet: 255.255.255.0
+  ap:
+    ssid: ${name}
+    password: !secret ap_password
+  on_connect:
+    then:
+      - light.turn_on: wifi_led
+  on_disconnect:
+    then:
+      - light.turn_off: wifi_led
+
+captive_portal:
+
+output:
+  - platform: gpio
+    pin: GPIO4
+    id: net_led_out
+    inverted: true
+
+status_led:
+  pin:
+    number: GPIO0
+
+light:
+  - platform: binary
+    id: wifi_led
+    output: net_led_out
+    internal: true
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+uart:
+  id: uart_0
+  baud_rate: 2400
+  tx_pin: ${tx_pin}
+  rx_pin: ${rx_pin}
+
+# ── PI18 component ─────────────────────────────────────────────────────────────
+pi18:
+  id: inverter
+  uart_id: uart_0
+  update_interval: 5s       # one command every 5s → full cycle ~35s (7 cmds)
+  watchdog_pin: GPIO13      # toggle every 1s to prevent ESP8266 WDT reset
+  watchdog_interval: 1000ms
+  parallel_units: 3         # sends PGS0, PGS1, PGS2
+
+sensor:
+  - platform: pi18
+    pi18_id: inverter
+    # ── Live status (^P005GS) ──────────────────────────────────────────────────
+    grid_voltage:
+      name: "${name} Grid Voltage"
+    grid_frequency:
+      name: "${name} Grid Frequency"
+    ac_output_voltage:
+      name: "${name} AC Output Voltage"
+    ac_output_frequency:
+      name: "${name} AC Output Frequency"
+    ac_output_apparent_power:
+      name: "${name} AC Output Apparent Power"
+    ac_output_active_power:
+      name: "${name} AC Output Active Power"
+    output_load_percent:
+      name: "${name} Output Load Percent"
+    battery_voltage:
+      name: "${name} Battery Voltage"
+    battery_voltage_scc1:
+      name: "${name} Battery Voltage SCC1"
+    battery_discharge_current:
+      name: "${name} Battery Discharge Current"
+    battery_charging_current:
+      name: "${name} Battery Charging Current"
+    battery_capacity:
+      name: "${name} Battery Capacity"
+    inverter_heatsink_temperature:
+      name: "${name} Heatsink Temperature"
+    mppt1_charger_temperature:
+      name: "${name} MPPT1 Temperature"
+    pv1_input_power:
+      name: "${name} PV1 Input Power"
+    pv1_input_voltage:
+      name: "${name} PV1 Input Voltage"
+    battery_power_direction:
+      name: "${name} Battery Power Direction"
+      internal: true
+    dc_ac_power_direction:
+      name: "${name} DC/AC Power Direction"
+      internal: true
+    line_power_direction:
+      name: "${name} Line Power Direction"
+      internal: true
+    local_parallel_id:
+      name: "${name} Parallel ID"
+    # ── Rated info (^P007PIRI) ─────────────────────────────────────────────────
+    battery_recharge_voltage:
+      name: "${name} Battery Recharge Voltage"
+    battery_redischarge_voltage:
+      name: "${name} Battery Redischarge Voltage"
+    battery_under_voltage:
+      name: "${name} Battery Under Voltage"
+    battery_bulk_voltage:
+      name: "${name} Battery Bulk Voltage"
+    battery_float_voltage:
+      name: "${name} Battery Float Voltage"
+    max_ac_charging_current:
+      name: "${name} Max AC Charging Current"
+    max_charging_current:
+      name: "${name} Max Charging Current"
+    output_source_priority:
+      name: "${name} Output Source Priority"
+      internal: true
+    charger_source_priority:
+      name: "${name} Charger Source Priority"
+      internal: true
+    output_mode:
+      name: "${name} Output Mode"
+    parallel_max_num:
+      name: "${name} Parallel Max Units"
+    solar_power_priority:
+      name: "${name} Solar Power Priority"
+      internal: true
+    # ── Parallel group status (^P007PGS0) ─────────────────────────────────────
+    pgs_grid_voltage:
+      name: "${name} PGS Grid Voltage"
+    pgs_grid_frequency:
+      name: "${name} PGS Grid Frequency"
+    pgs_ac_output_voltage:
+      name: "${name} PGS AC Output Voltage"
+    pgs_ac_output_active_power:
+      name: "${name} PGS AC Output Active Power"
+    pgs_total_ac_output_apparent_power:
+      name: "${name} Total AC Output Apparent Power"
+    pgs_total_ac_output_active_power:
+      name: "${name} Total AC Output Active Power"
+    pgs_total_output_load_percent:
+      name: "${name} Total Output Load Percent"
+    pgs_battery_voltage:
+      name: "${name} PGS Battery Voltage"
+    pgs_battery_charging_current:
+      name: "${name} PGS Battery Charging Current"
+    pgs_total_battery_charging_current:
+      name: "${name} Total Battery Charging Current"
+    pgs_battery_capacity:
+      name: "${name} PGS Battery Capacity"
+    pgs_pv1_input_power:
+      name: "${name} PGS PV1 Input Power"
+    pgs_pv1_input_voltage:
+      name: "${name} PGS PV1 Input Voltage"
+    pgs_max_temperature:
+      name: "${name} PGS Max Temperature"
+    # ── Energy (^P005ET) ───────────────────────────────────────────────────────
+    total_generated_energy:
+      name: "${name} Total Generated Energy"
+
+  - platform: wifi_signal
+    name: "${name} WiFi Signal"
+    update_interval: 60s
+
+  - platform: uptime
+    name: "${name} Uptime"
+    update_interval: 60s
+
+binary_sensor:
+  - platform: pi18
+    pi18_id: inverter
+    load_connected:
+      name: "${name} Load Connected"
+    warning_line_fail:
+      name: "${name} Warning Line Fail"
+    warning_over_temperature:
+      name: "${name} Warning Over Temperature"
+    warning_fan_lock:
+      name: "${name} Warning Fan Lock"
+    warning_battery_voltage_high:
+      name: "${name} Warning Battery Voltage High"
+    warning_battery_low:
+      name: "${name} Warning Battery Low"
+    warning_over_load:
+      name: "${name} Warning Over Load"
+    warning_pv1_voltage_high:
+      name: "${name} Warning PV1 Voltage High"
+    flag_silence_buzzer:
+      name: "${name} Flag Silence Buzzer"
+    flag_overload_bypass:
+      name: "${name} Flag Overload Bypass"
+    flag_backlight_on:
+      name: "${name} Flag Backlight"
+
+text_sensor:
+  - platform: pi18
+    pi18_id: inverter
+    device_mode:
+      name: "${name} Device Mode"
+    fault_code:
+      name: "${name} Fault Code"
+    battery_power_direction_text:
+      name: "${name} Battery Power Direction"
+    dc_ac_power_direction_text:
+      name: "${name} DC/AC Power Direction"
+    line_power_direction_text:
+      name: "${name} Line Power Direction"
+
+switch:
+  - platform: pi18
+    pi18_id: inverter
+    output_source_priority_sub:
+      name: "${name} Output Priority Solar-Battery"
+    solar_power_priority_load_first:
+      name: "${name} Solar Priority Load First"
+    charger_solar_first:
+      name: "${name} Charger Solar First"
+    charger_utility:
+      name: "${name} Charger Utility"
+    charger_solar_only:
+      name: "${name} Charger Solar Only"
+    flag_silence_buzzer_sw:
+      name: "${name} Silence Buzzer"
+    flag_overload_bypass_sw:
+      name: "${name} Overload Bypass"
+    flag_overload_restart_sw:
+      name: "${name} Overload Restart"
+    flag_over_temp_restart_sw:
+      name: "${name} Over Temp Restart"
+    flag_backlight_sw:
+      name: "${name} Backlight"
+    load_on:
+      name: "${name} Load Output"
