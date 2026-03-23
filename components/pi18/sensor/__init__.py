@@ -2,7 +2,6 @@ import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import sensor
 from esphome.const import (
-    CONF_ID,
     DEVICE_CLASS_VOLTAGE,
     DEVICE_CLASS_CURRENT,
     DEVICE_CLASS_POWER,
@@ -23,18 +22,6 @@ from esphome.const import (
 from .. import PI18Component, CONF_PI18_ID, pi18_ns
 
 DEPENDENCIES = ["pi18"]
-
-# ── helpers ────────────────────────────────────────────────────────────────────
-def _sensor(name, unit="", dc=None, sc=STATE_CLASS_MEASUREMENT, acc=1):
-    schema = sensor.sensor_schema(
-        unit_of_measurement=unit,
-        accuracy_decimals=acc,
-        state_class=sc,
-    )
-    if dc:
-        schema = schema.extend({cv.Optional("device_class"): cv.string})
-    return cv.Optional(name): schema
-
 
 # ── sensor keys ───────────────────────────────────────────────────────────────
 # ^P005GS
