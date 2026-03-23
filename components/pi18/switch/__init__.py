@@ -28,6 +28,8 @@ SWITCHES = {
     "flag_fault_record_sw": ("PEH", "PDH"),
     # Load on/off
     "load_on": ("LON1", "LON0"),
+    # AC output frequency (50 Hz = on, 60 Hz = off)
+    "ac_freq_50hz": ("F50", "F60"),
 }
 
 CONFIG_SCHEMA = cv.Schema(

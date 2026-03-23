@@ -238,6 +238,50 @@ text_sensor:
     line_power_direction_text:
       name: "${name} Line Power Direction"
 
+select:
+  - platform: pi18
+    pi18_id: inverter
+    output_source_priority_select:
+      name: "${name} Output Source Priority"
+    charger_source_priority_select:
+      name: "${name} Charger Source Priority"
+    solar_power_priority_select:
+      name: "${name} Solar Power Priority"
+    battery_type_select:
+      name: "${name} Battery Type"
+    input_voltage_range_select:
+      name: "${name} Input Voltage Range"
+    ac_output_voltage_select:
+      name: "${name} AC Output Voltage"
+    max_charging_current_select:
+      name: "${name} Max Charging Current"
+    max_ac_charging_current_select:
+      name: "${name} Max AC Charging Current"
+    output_mode_select:
+      name: "${name} Output Mode"
+
+number:
+  - platform: pi18
+    pi18_id: inverter
+    battery_bulk_voltage:
+      name: "${name} Battery Bulk Voltage"
+    battery_float_voltage:
+      name: "${name} Battery Float Voltage"
+    battery_recharge_voltage:
+      name: "${name} Battery Recharge Voltage"
+    battery_redischarge_voltage:
+      name: "${name} Battery Redischarge Voltage"
+    battery_cutoff_voltage:
+      name: "${name} Battery Cutoff Voltage"
+
+button:
+  - platform: pi18
+    pi18_id: inverter
+    restore_defaults:
+      name: "${name} Restore Defaults"
+    clear_energy:
+      name: "${name} Clear Energy Counter"
+
 switch:
   - platform: pi18
     pi18_id: inverter
@@ -263,3 +307,5 @@ switch:
       name: "${name} Backlight"
     load_on:
       name: "${name} Load Output"
+    ac_freq_50hz:
+      name: "${name} AC Frequency 50Hz"

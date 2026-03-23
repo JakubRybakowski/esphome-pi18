@@ -7,7 +7,11 @@
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/switch/switch.h"
+#include "esphome/components/number/number.h"
+#include "esphome/components/select/select.h"
+#include "esphome/components/button/button.h"
 
+#include <map>
 #include <vector>
 #include <string>
 #include <functional>
@@ -34,6 +38,56 @@ class PI18Switch : public switch_::Switch {
   std::string command_off_;
 };
 
+// ─── PI18 button helper ───────────────────────────────────────────────────────
+class PI18Button : public button::Button {
+ public:
+  void set_parent(PI18Component *parent) { parent_ = parent; }
+  void set_command(std::string cmd) { command_ = std::move(cmd); }
+
+ protected:
+  void press_action() override;
+  PI18Component *parent_{nullptr};
+  std::string command_;
+};
+
+// ─── PI18 select helper ───────────────────────────────────────────────────────
+class PI18Select : public select::Select, public Component {
+ public:
+  void set_parent(PI18Component *parent) { parent_ = parent; }
+  void add_mapping(const std::string &option, const std::string &cmd) {
+    mappings_[option] = cmd;
+  }
+  // If true: command template contains %u for unit number,
+  // will be sent for each of parent's parallel_units
+  void set_multi_unit(bool v) { multi_unit_ = v; }
+  float get_setup_priority() const override { return setup_priority::DATA; }
+
+ protected:
+  void control(const std::string &value) override;
+  PI18Component *parent_{nullptr};
+  std::map<std::string, std::string> mappings_;
+  bool multi_unit_{false};
+};
+
+// ─── PI18 number helper ───────────────────────────────────────────────────────
+// pair_role: 0=simple  1=bulk_voltage  2=float_voltage
+//            3=recharge_voltage  4=redischarge_voltage
+class PI18Number : public number::Number, public Component {
+ public:
+  void set_parent(PI18Component *parent) { parent_ = parent; }
+  void set_command_template(const std::string &tmpl) { command_template_ = tmpl; }
+  void set_multiplier(float mult) { multiplier_ = mult; }
+  void set_pair_role(uint8_t role) { pair_role_ = role; }
+  float get_setup_priority() const override { return setup_priority::DATA; }
+
+ protected:
+  void control(float value) override;
+  PI18Component *parent_{nullptr};
+  std::string command_template_;
+  float multiplier_{1.0f};
+  uint8_t pair_role_{0};
+};
+
 // ─── Main component ───────────────────────────────────────────────────────────
 class PI18Component : public uart::UARTDevice, public PollingComponent {
  public:
@@ -41,6 +95,7 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   void set_watchdog_pin(GPIOPin *pin) { watchdog_pin_ = pin; }
   void set_watchdog_interval(uint32_t ms) { watchdog_interval_ = ms; }
   void set_parallel_units(uint8_t n) { parallel_units_ = n; }
+  uint8_t get_parallel_units() const { return parallel_units_; }
 
   // ── Lifecycle ───────────────────────────────────────────────────────────────
   void setup() override;
@@ -50,6 +105,19 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
 
   // ── Send a raw PI18 set command (used by switches/selects/numbers) ──────────
   void send_set_command(const std::string &cmd);
+
+  // ── Paired voltage handlers (called from PI18Number) ────────────────────────
+  void handle_bulk_voltage(float v);
+  void handle_float_voltage(float v);
+  void handle_recharge_voltage(float v);
+  void handle_redischarge_voltage(float v);
+
+  // ── Number entity pointers (set by number/__init__.py) ──────────────────────
+  void set_battery_bulk_voltage_number(number::Number *n) { battery_bulk_voltage_number_ = n; }
+  void set_battery_float_voltage_number(number::Number *n) { battery_float_voltage_number_ = n; }
+  void set_battery_recharge_voltage_number(number::Number *n) { battery_recharge_voltage_number_ = n; }
+  void set_battery_redischarge_voltage_number(number::Number *n) { battery_redischarge_voltage_number_ = n; }
+  void set_battery_cutoff_voltage_number(number::Number *n) { battery_cutoff_voltage_number_ = n; }
 
   // ── ^P005GS sensors ─────────────────────────────────────────────────────────
   SUB_SENSOR(grid_voltage)
@@ -198,6 +266,25 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
 
   // Command queue for set commands (fire-and-forget)
   std::vector<std::string> set_queue_;
+
+  // ── Number entity pointers ───────────────────────────────────────────────────
+  number::Number *battery_bulk_voltage_number_{nullptr};
+  number::Number *battery_float_voltage_number_{nullptr};
+  number::Number *battery_recharge_voltage_number_{nullptr};
+  number::Number *battery_redischarge_voltage_number_{nullptr};
+  number::Number *battery_cutoff_voltage_number_{nullptr};
+
+  // ── Stored values for paired set commands ────────────────────────────────────
+  // MCHGV (bulk + float) — initialized from PIRI, then kept in sync
+  float stored_bulk_voltage_{0.0f};
+  float stored_float_voltage_{0.0f};
+  bool stored_bulk_valid_{false};
+  bool stored_float_valid_{false};
+  // BUCD (recharge + redischarge)
+  float stored_recharge_voltage_{0.0f};
+  float stored_redischarge_voltage_{0.0f};
+  bool stored_recharge_valid_{false};
+  bool stored_redischarge_valid_{false};
 
   // Helpers
   void build_poll_commands_();

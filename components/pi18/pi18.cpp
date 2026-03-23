@@ -24,12 +24,113 @@ uint16_t pi18_crc(const uint8_t *data, size_t len) {
   return crc;
 }
 
+// ─── PI18Button ───────────────────────────────────────────────────────────────
+void PI18Button::press_action() {
+  if (!command_.empty() && parent_ != nullptr)
+    parent_->send_set_command(command_);
+}
+
 // ─── PI18Switch ───────────────────────────────────────────────────────────────
 void PI18Switch::write_state(bool state) {
   const std::string &cmd = state ? command_on_ : command_off_;
   if (!cmd.empty() && parent_ != nullptr) {
     parent_->send_set_command(cmd);
     this->publish_state(state);
+  }
+}
+
+// ─── PI18Select ───────────────────────────────────────────────────────────────
+void PI18Select::control(const std::string &value) {
+  auto it = mappings_.find(value);
+  if (it == mappings_.end() || parent_ == nullptr) {
+    ESP_LOGW(TAG, "PI18Select: unknown option '%s'", value.c_str());
+    return;
+  }
+  if (multi_unit_) {
+    uint8_t units = parent_->get_parallel_units();
+    for (uint8_t u = 0; u < units; u++) {
+      char buf[32];
+      snprintf(buf, sizeof(buf), it->second.c_str(), (unsigned) u);
+      parent_->send_set_command(buf);
+    }
+  } else {
+    parent_->send_set_command(it->second);
+  }
+  this->publish_state(value);
+}
+
+// ─── PI18Number ───────────────────────────────────────────────────────────────
+void PI18Number::control(float value) {
+  if (parent_ == nullptr) return;
+  switch (pair_role_) {
+    case 1: parent_->handle_bulk_voltage(value); break;
+    case 2: parent_->handle_float_voltage(value); break;
+    case 3: parent_->handle_recharge_voltage(value); break;
+    case 4: parent_->handle_redischarge_voltage(value); break;
+    default: {
+      char buf[32];
+      snprintf(buf, sizeof(buf), command_template_.c_str(), (int) (value * multiplier_ + 0.5f));
+      parent_->send_set_command(buf);
+      break;
+    }
+  }
+  this->publish_state(value);
+}
+
+// ─── PI18Component: paired voltage handlers ───────────────────────────────────
+void PI18Component::handle_bulk_voltage(float v) {
+  stored_bulk_voltage_ = v;
+  stored_bulk_valid_ = true;
+  if (battery_bulk_voltage_number_ != nullptr)
+    battery_bulk_voltage_number_->publish_state(v);
+  if (stored_float_valid_) {
+    char buf[32];
+    snprintf(buf, sizeof(buf), "MCHGV%03d,%03d",
+             (int) (stored_bulk_voltage_ * 10 + 0.5f),
+             (int) (stored_float_voltage_ * 10 + 0.5f));
+    send_set_command(buf);
+  }
+}
+
+void PI18Component::handle_float_voltage(float v) {
+  stored_float_voltage_ = v;
+  stored_float_valid_ = true;
+  if (battery_float_voltage_number_ != nullptr)
+    battery_float_voltage_number_->publish_state(v);
+  if (stored_bulk_valid_) {
+    char buf[32];
+    snprintf(buf, sizeof(buf), "MCHGV%03d,%03d",
+             (int) (stored_bulk_voltage_ * 10 + 0.5f),
+             (int) (stored_float_voltage_ * 10 + 0.5f));
+    send_set_command(buf);
+  }
+}
+
+void PI18Component::handle_recharge_voltage(float v) {
+  stored_recharge_voltage_ = v;
+  stored_recharge_valid_ = true;
+  if (battery_recharge_voltage_number_ != nullptr)
+    battery_recharge_voltage_number_->publish_state(v);
+  if (stored_redischarge_valid_) {
+    char buf[32];
+    snprintf(buf, sizeof(buf), "BUCD%03d,%03d",
+             (int) (stored_recharge_voltage_ * 10 + 0.5f),
+             (int) (stored_redischarge_voltage_ * 10 + 0.5f));
+    send_set_command(buf);
+  }
+}
+
+void PI18Component::handle_redischarge_voltage(float v) {
+  stored_redischarge_voltage_ = v;
+  stored_redischarge_valid_ = true;
+  if (battery_redischarge_voltage_number_ != nullptr)
+    battery_redischarge_voltage_number_->publish_state(v);
+  if (stored_recharge_valid_) {
+    char buf[32];
+    snprintf(buf, sizeof(buf), "BUCD%03d,%03d",
+             (int) (stored_recharge_voltage_ * 10 + 0.5f),
+             (int) (stored_redischarge_voltage_ * 10 + 0.5f));
+    send_set_command(buf);
   }
 }
 
@@ -393,16 +494,52 @@ void PI18Component::decode_piri_(const std::vector<std::string> &f) {
     ac_output_rating_active_power_sensor_->publish_state(parse_float_(f[6]));
   if (battery_rating_voltage_sensor_ != nullptr)
     battery_rating_voltage_sensor_->publish_state(parse_float_(f[7], 0.1f));
+  // f[8] = battery recharge voltage
+  float recharge_v = parse_float_(f[8], 0.1f);
   if (battery_recharge_voltage_sensor_ != nullptr)
-    battery_recharge_voltage_sensor_->publish_state(parse_float_(f[8], 0.1f));
+    battery_recharge_voltage_sensor_->publish_state(recharge_v);
+  if (!stored_recharge_valid_) {
+    stored_recharge_voltage_ = recharge_v;
+    stored_recharge_valid_ = true;
+  }
+  if (battery_recharge_voltage_number_ != nullptr)
+    battery_recharge_voltage_number_->publish_state(recharge_v);
+
+  // f[9] = battery redischarge voltage
+  float redischarge_v = parse_float_(f[9], 0.1f);
   if (battery_redischarge_voltage_sensor_ != nullptr)
-    battery_redischarge_voltage_sensor_->publish_state(parse_float_(f[9], 0.1f));
+    battery_redischarge_voltage_sensor_->publish_state(redischarge_v);
+  if (!stored_redischarge_valid_) {
+    stored_redischarge_voltage_ = redischarge_v;
+    stored_redischarge_valid_ = true;
+  }
+  if (battery_redischarge_voltage_number_ != nullptr)
+    battery_redischarge_voltage_number_->publish_state(redischarge_v);
+
   if (battery_under_voltage_sensor_ != nullptr)
     battery_under_voltage_sensor_->publish_state(parse_float_(f[10], 0.1f));
+
+  // f[11] = bulk voltage
+  float bulk_v = parse_float_(f[11], 0.1f);
   if (battery_bulk_voltage_sensor_ != nullptr)
-    battery_bulk_voltage_sensor_->publish_state(parse_float_(f[11], 0.1f));
+    battery_bulk_voltage_sensor_->publish_state(bulk_v);
+  if (!stored_bulk_valid_) {
+    stored_bulk_voltage_ = bulk_v;
+    stored_bulk_valid_ = true;
+  }
+  if (battery_bulk_voltage_number_ != nullptr)
+    battery_bulk_voltage_number_->publish_state(bulk_v);
+
+  // f[12] = float voltage
+  float float_v = parse_float_(f[12], 0.1f);
   if (battery_float_voltage_sensor_ != nullptr)
-    battery_float_voltage_sensor_->publish_state(parse_float_(f[12], 0.1f));
+    battery_float_voltage_sensor_->publish_state(float_v);
+  if (!stored_float_valid_) {
+    stored_float_voltage_ = float_v;
+    stored_float_valid_ = true;
+  }
+  if (battery_float_voltage_number_ != nullptr)
+    battery_float_voltage_number_->publish_state(float_v);
   if (battery_type_sensor_ != nullptr)
     battery_type_sensor_->publish_state(parse_float_(f[13]));
   if (max_ac_charging_current_sensor_ != nullptr)
