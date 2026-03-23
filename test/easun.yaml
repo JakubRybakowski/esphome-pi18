@@ -234,9 +234,15 @@ text_sensor:
     battery_power_direction_text:
       name: "${name} Battery Power Direction"
     dc_ac_power_direction_text:
-      name: "${name} DC/AC Power Direction"
+      name: "${name} DC-AC Power Direction"
     line_power_direction_text:
       name: "${name} Line Power Direction"
+    protocol_id:
+      name: "${name} Protocol ID"
+    serial_number:
+      name: "${name} Serial Number"
+    firmware_version:
+      name: "${name} Firmware Version"
 
 select:
   - platform: pi18
@@ -309,3 +315,5 @@ switch:
       name: "${name} Load Output"
     ac_freq_50hz:
       name: "${name} AC Frequency 50Hz"
+    grid_tie_mode:
+      name: "${name} Grid-Tie Mode"

@@ -30,6 +30,8 @@ SWITCHES = {
     "load_on": ("LON1", "LON0"),
     # AC output frequency (50 Hz = on, 60 Hz = off)
     "ac_freq_50hz": ("F50", "F60"),
+    # Grid-tie mode
+    "grid_tie_mode": ("PEI", "PDI"),
 }
 
 CONFIG_SCHEMA = cv.Schema(

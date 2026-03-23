@@ -251,6 +251,10 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   SUB_TEXT_SENSOR(battery_power_direction_text)
   SUB_TEXT_SENSOR(dc_ac_power_direction_text)
   SUB_TEXT_SENSOR(line_power_direction_text)
+  // Informational — only polled if sensor is configured
+  SUB_TEXT_SENSOR(protocol_id)
+  SUB_TEXT_SENSOR(serial_number)
+  SUB_TEXT_SENSOR(firmware_version)
 
  protected:
   // ── Internals ────────────────────────────────────────────────────────────────

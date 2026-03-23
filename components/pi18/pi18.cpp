@@ -263,6 +263,14 @@ void PI18Component::build_poll_commands_() {
   for (uint8_t i = 0; i < parallel_units_; i++) {
     poll_commands_.push_back(std::string("PGS") + (char)('0' + i));
   }
+
+  // Informational — only poll when sensors are configured
+  if (protocol_id_text_sensor_ != nullptr)
+    poll_commands_.push_back("PI");
+  if (serial_number_text_sensor_ != nullptr)
+    poll_commands_.push_back("ID");
+  if (firmware_version_text_sensor_ != nullptr)
+    poll_commands_.push_back("VFW");
 }
 
 // ─── Frame builder ────────────────────────────────────────────────────────────
@@ -343,6 +351,15 @@ void PI18Component::dispatch_response_(const std::string &cmd, const std::string
     decode_et_(fields);
   } else if (cmd.size() == 4 && cmd.substr(0, 3) == "PGS") {
     decode_pgs_(fields);
+  } else if (cmd == "PI") {
+    if (protocol_id_text_sensor_ != nullptr)
+      protocol_id_text_sensor_->publish_state(data);
+  } else if (cmd == "ID") {
+    if (serial_number_text_sensor_ != nullptr)
+      serial_number_text_sensor_->publish_state(data);
+  } else if (cmd == "VFW") {
+    if (firmware_version_text_sensor_ != nullptr)
+      firmware_version_text_sensor_->publish_state(data);
   }
 }
 
