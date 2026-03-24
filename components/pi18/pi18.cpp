@@ -608,7 +608,7 @@ void PI18Component::decode_piri_(const std::vector<std::string> &f) {
   static const char *OPP[] = {"Utility-Solar-Battery", "Solar-Utility-Battery", "Solar-Battery-Utility"};
   static const char *CSP[] = {"Utility-first", "Solar-first", "Solar-Utility", "Solar-only"};
   static const char *SPP[] = {"Battery-Load", "Load-Battery"};
-  static const char *BTP[] = {"AGM", "Flooded", "User-defined", "Pylontech", "WECO", "Soltaro", "LIB-compatible"};
+  static const char *BTP[] = {"AGM", "Flooded", "User-defined", "Pylontech", "WECO", "Soltaro", "LIB-compatible", "Lithium", "LIB-protocol"};
   static const char *IVR[] = {"Appliance", "UPS"};
   static const char *OMD[] = {"Single", "Parallel", "Phase-1 of 3", "Phase-2 of 3", "Phase-3 of 3"};
 
@@ -622,7 +622,7 @@ void PI18Component::decode_piri_(const std::vector<std::string> &f) {
   {
     int bt = parse_int_(f[13]);
     ESP_LOGD(TAG, "PIRI battery_type raw=%d", bt);
-    pub_sel(battery_type_select_, BTP, 7, bt);
+    pub_sel(battery_type_select_, BTP, 9, bt);
   }
   pub_sel(input_voltage_range_select_, IVR, 2, parse_int_(f[16]));
   pub_sel(output_mode_select_, OMD, 5, parse_int_(f[22]));

@@ -37,6 +37,8 @@ BATTERY_TYPE_OPTIONS = {
     "WECO":           "PBT4",
     "Soltaro":        "PBT5",
     "LIB-compatible": "PBT6",
+    "Lithium":        "PBT7",
+    "LIB-protocol":   "PBT8",
 }
 
 INPUT_VOLTAGE_RANGE_OPTIONS = {
