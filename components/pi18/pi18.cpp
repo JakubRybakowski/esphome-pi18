@@ -350,7 +350,8 @@ void PI18Component::dispatch_response_(const std::string &cmd, const std::string
   } else if (cmd == "ET") {
     decode_et_(fields);
   } else if (cmd.size() == 4 && cmd.substr(0, 3) == "PGS") {
-    decode_pgs_(fields);
+    uint8_t phase = (uint8_t)(cmd[3] - '0');
+    decode_pgs_(fields, phase);
   } else if (cmd == "PI") {
     if (protocol_id_text_sensor_ != nullptr)
       protocol_id_text_sensor_->publish_state(data);
@@ -705,15 +706,15 @@ void PI18Component::decode_flag_(const std::vector<std::string> &f) {
 }
 
 // ─── Decoder: ^P007PGSn — Parallel Group Status (29 fields) ──────────────────
-void PI18Component::decode_pgs_(const std::vector<std::string> &f) {
+void PI18Component::decode_pgs_(const std::vector<std::string> &f, uint8_t phase) {
   if (f.size() < 29) {
-    ESP_LOGW(TAG, "PGS: expected 29 fields, got %zu", f.size());
+    ESP_LOGW(TAG, "PGS%u: expected 29 fields, got %zu", phase, f.size());
     for (size_t i = 0; i < f.size(); i++)
-      ESP_LOGD(TAG, "  PGS[%zu] = '%s'", i, f[i].c_str());
+      ESP_LOGD(TAG, "  PGS%u[%zu] = '%s'", phase, i, f[i].c_str());
     return;
   }
   for (size_t i = 0; i < f.size(); i++)
-    ESP_LOGV(TAG, "  PGS[%zu] = '%s'", i, f[i].c_str());
+    ESP_LOGV(TAG, "  PGS%u[%zu] = '%s'", phase, i, f[i].c_str());
 
   // f[0]  = parallel ID connection status
   // f[1]  = work mode
@@ -785,6 +786,31 @@ void PI18Component::decode_pgs_(const std::vector<std::string> &f) {
     pgs_pv2_input_voltage_sensor_->publish_state(parse_float_(f[21], 0.1f));
   if (pgs_max_temperature_sensor_ != nullptr)
     pgs_max_temperature_sensor_->publish_state(parse_float_(f[28]));
+
+  // Per-phase (L1/L2/L3) sensors
+  if (phase < 3) {
+    sensor::Sensor *ps_ac_voltage[3]     = {l1_ac_output_voltage_sensor_,     l2_ac_output_voltage_sensor_,     l3_ac_output_voltage_sensor_};
+    sensor::Sensor *ps_ac_frequency[3]   = {l1_ac_output_frequency_sensor_,   l2_ac_output_frequency_sensor_,   l3_ac_output_frequency_sensor_};
+    sensor::Sensor *ps_apparent[3]       = {l1_ac_output_apparent_power_sensor_, l2_ac_output_apparent_power_sensor_, l3_ac_output_apparent_power_sensor_};
+    sensor::Sensor *ps_active[3]         = {l1_ac_output_active_power_sensor_, l2_ac_output_active_power_sensor_, l3_ac_output_active_power_sensor_};
+    sensor::Sensor *ps_load_pct[3]       = {l1_output_load_percent_sensor_,   l2_output_load_percent_sensor_,   l3_output_load_percent_sensor_};
+    sensor::Sensor *ps_pv1_power[3]      = {l1_pv1_input_power_sensor_,       l2_pv1_input_power_sensor_,       l3_pv1_input_power_sensor_};
+    sensor::Sensor *ps_pv2_power[3]      = {l1_pv2_input_power_sensor_,       l2_pv2_input_power_sensor_,       l3_pv2_input_power_sensor_};
+    sensor::Sensor *ps_pv1_voltage[3]    = {l1_pv1_input_voltage_sensor_,     l2_pv1_input_voltage_sensor_,     l3_pv1_input_voltage_sensor_};
+    sensor::Sensor *ps_pv2_voltage[3]    = {l1_pv2_input_voltage_sensor_,     l2_pv2_input_voltage_sensor_,     l3_pv2_input_voltage_sensor_};
+    sensor::Sensor *ps_temperature[3]    = {l1_max_temperature_sensor_,       l2_max_temperature_sensor_,       l3_max_temperature_sensor_};
+
+    if (ps_ac_voltage[phase])   ps_ac_voltage[phase]->publish_state(parse_float_(f[5], 0.1f));
+    if (ps_ac_frequency[phase]) ps_ac_frequency[phase]->publish_state(parse_float_(f[6], 0.1f));
+    if (ps_apparent[phase])     ps_apparent[phase]->publish_state(parse_float_(f[7]));
+    if (ps_active[phase])       ps_active[phase]->publish_state(parse_float_(f[8]));
+    if (ps_load_pct[phase])     ps_load_pct[phase]->publish_state(parse_float_(f[11]));
+    if (ps_pv1_power[phase])    ps_pv1_power[phase]->publish_state(parse_float_(f[18]));
+    if (ps_pv2_power[phase])    ps_pv2_power[phase]->publish_state(parse_float_(f[19]));
+    if (ps_pv1_voltage[phase])  ps_pv1_voltage[phase]->publish_state(parse_float_(f[20], 0.1f));
+    if (ps_pv2_voltage[phase])  ps_pv2_voltage[phase]->publish_state(parse_float_(f[21], 0.1f));
+    if (ps_temperature[phase])  ps_temperature[phase]->publish_state(parse_float_(f[28]));
+  }
 }
 
 // ─── Decoder: ^P005ET — Total Generated Energy ───────────────────────────────

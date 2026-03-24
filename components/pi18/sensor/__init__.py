@@ -104,6 +104,40 @@ CONF_PGS_MAX_TEMPERATURE = "pgs_max_temperature"
 # ^P005ET
 CONF_TOTAL_GENERATED_ENERGY = "total_generated_energy"
 
+# Per-phase L1/L2/L3 (from PGS0/PGS1/PGS2)
+CONF_L1_AC_OUTPUT_VOLTAGE = "l1_ac_output_voltage"
+CONF_L1_AC_OUTPUT_FREQUENCY = "l1_ac_output_frequency"
+CONF_L1_AC_OUTPUT_APPARENT_POWER = "l1_ac_output_apparent_power"
+CONF_L1_AC_OUTPUT_ACTIVE_POWER = "l1_ac_output_active_power"
+CONF_L1_OUTPUT_LOAD_PERCENT = "l1_output_load_percent"
+CONF_L1_PV1_INPUT_POWER = "l1_pv1_input_power"
+CONF_L1_PV2_INPUT_POWER = "l1_pv2_input_power"
+CONF_L1_PV1_INPUT_VOLTAGE = "l1_pv1_input_voltage"
+CONF_L1_PV2_INPUT_VOLTAGE = "l1_pv2_input_voltage"
+CONF_L1_MAX_TEMPERATURE = "l1_max_temperature"
+
+CONF_L2_AC_OUTPUT_VOLTAGE = "l2_ac_output_voltage"
+CONF_L2_AC_OUTPUT_FREQUENCY = "l2_ac_output_frequency"
+CONF_L2_AC_OUTPUT_APPARENT_POWER = "l2_ac_output_apparent_power"
+CONF_L2_AC_OUTPUT_ACTIVE_POWER = "l2_ac_output_active_power"
+CONF_L2_OUTPUT_LOAD_PERCENT = "l2_output_load_percent"
+CONF_L2_PV1_INPUT_POWER = "l2_pv1_input_power"
+CONF_L2_PV2_INPUT_POWER = "l2_pv2_input_power"
+CONF_L2_PV1_INPUT_VOLTAGE = "l2_pv1_input_voltage"
+CONF_L2_PV2_INPUT_VOLTAGE = "l2_pv2_input_voltage"
+CONF_L2_MAX_TEMPERATURE = "l2_max_temperature"
+
+CONF_L3_AC_OUTPUT_VOLTAGE = "l3_ac_output_voltage"
+CONF_L3_AC_OUTPUT_FREQUENCY = "l3_ac_output_frequency"
+CONF_L3_AC_OUTPUT_APPARENT_POWER = "l3_ac_output_apparent_power"
+CONF_L3_AC_OUTPUT_ACTIVE_POWER = "l3_ac_output_active_power"
+CONF_L3_OUTPUT_LOAD_PERCENT = "l3_output_load_percent"
+CONF_L3_PV1_INPUT_POWER = "l3_pv1_input_power"
+CONF_L3_PV2_INPUT_POWER = "l3_pv2_input_power"
+CONF_L3_PV1_INPUT_VOLTAGE = "l3_pv1_input_voltage"
+CONF_L3_PV2_INPUT_VOLTAGE = "l3_pv2_input_voltage"
+CONF_L3_MAX_TEMPERATURE = "l3_max_temperature"
+
 SENSOR_SCHEMAS = {
     # GS
     CONF_GRID_VOLTAGE: sensor.sensor_schema(unit_of_measurement=UNIT_VOLT, accuracy_decimals=1, device_class=DEVICE_CLASS_VOLTAGE, state_class=STATE_CLASS_MEASUREMENT),
@@ -181,6 +215,39 @@ SENSOR_SCHEMAS = {
     CONF_PGS_MAX_TEMPERATURE: sensor.sensor_schema(unit_of_measurement=UNIT_CELSIUS, accuracy_decimals=0, device_class=DEVICE_CLASS_TEMPERATURE, state_class=STATE_CLASS_MEASUREMENT),
     # ET
     CONF_TOTAL_GENERATED_ENERGY: sensor.sensor_schema(unit_of_measurement=UNIT_WATT_HOURS, accuracy_decimals=0, device_class=DEVICE_CLASS_ENERGY, state_class=STATE_CLASS_TOTAL_INCREASING),
+    # Per-phase L1
+    CONF_L1_AC_OUTPUT_VOLTAGE: sensor.sensor_schema(unit_of_measurement=UNIT_VOLT, accuracy_decimals=1, device_class=DEVICE_CLASS_VOLTAGE, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L1_AC_OUTPUT_FREQUENCY: sensor.sensor_schema(unit_of_measurement=UNIT_HERTZ, accuracy_decimals=1, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L1_AC_OUTPUT_APPARENT_POWER: sensor.sensor_schema(unit_of_measurement=UNIT_VOLT_AMPS, accuracy_decimals=0, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L1_AC_OUTPUT_ACTIVE_POWER: sensor.sensor_schema(unit_of_measurement=UNIT_WATT, accuracy_decimals=0, device_class=DEVICE_CLASS_POWER, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L1_OUTPUT_LOAD_PERCENT: sensor.sensor_schema(unit_of_measurement=UNIT_PERCENT, accuracy_decimals=0, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L1_PV1_INPUT_POWER: sensor.sensor_schema(unit_of_measurement=UNIT_WATT, accuracy_decimals=0, device_class=DEVICE_CLASS_POWER, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L1_PV2_INPUT_POWER: sensor.sensor_schema(unit_of_measurement=UNIT_WATT, accuracy_decimals=0, device_class=DEVICE_CLASS_POWER, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L1_PV1_INPUT_VOLTAGE: sensor.sensor_schema(unit_of_measurement=UNIT_VOLT, accuracy_decimals=1, device_class=DEVICE_CLASS_VOLTAGE, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L1_PV2_INPUT_VOLTAGE: sensor.sensor_schema(unit_of_measurement=UNIT_VOLT, accuracy_decimals=1, device_class=DEVICE_CLASS_VOLTAGE, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L1_MAX_TEMPERATURE: sensor.sensor_schema(unit_of_measurement=UNIT_CELSIUS, accuracy_decimals=0, device_class=DEVICE_CLASS_TEMPERATURE, state_class=STATE_CLASS_MEASUREMENT),
+    # Per-phase L2
+    CONF_L2_AC_OUTPUT_VOLTAGE: sensor.sensor_schema(unit_of_measurement=UNIT_VOLT, accuracy_decimals=1, device_class=DEVICE_CLASS_VOLTAGE, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L2_AC_OUTPUT_FREQUENCY: sensor.sensor_schema(unit_of_measurement=UNIT_HERTZ, accuracy_decimals=1, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L2_AC_OUTPUT_APPARENT_POWER: sensor.sensor_schema(unit_of_measurement=UNIT_VOLT_AMPS, accuracy_decimals=0, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L2_AC_OUTPUT_ACTIVE_POWER: sensor.sensor_schema(unit_of_measurement=UNIT_WATT, accuracy_decimals=0, device_class=DEVICE_CLASS_POWER, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L2_OUTPUT_LOAD_PERCENT: sensor.sensor_schema(unit_of_measurement=UNIT_PERCENT, accuracy_decimals=0, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L2_PV1_INPUT_POWER: sensor.sensor_schema(unit_of_measurement=UNIT_WATT, accuracy_decimals=0, device_class=DEVICE_CLASS_POWER, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L2_PV2_INPUT_POWER: sensor.sensor_schema(unit_of_measurement=UNIT_WATT, accuracy_decimals=0, device_class=DEVICE_CLASS_POWER, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L2_PV1_INPUT_VOLTAGE: sensor.sensor_schema(unit_of_measurement=UNIT_VOLT, accuracy_decimals=1, device_class=DEVICE_CLASS_VOLTAGE, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L2_PV2_INPUT_VOLTAGE: sensor.sensor_schema(unit_of_measurement=UNIT_VOLT, accuracy_decimals=1, device_class=DEVICE_CLASS_VOLTAGE, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L2_MAX_TEMPERATURE: sensor.sensor_schema(unit_of_measurement=UNIT_CELSIUS, accuracy_decimals=0, device_class=DEVICE_CLASS_TEMPERATURE, state_class=STATE_CLASS_MEASUREMENT),
+    # Per-phase L3
+    CONF_L3_AC_OUTPUT_VOLTAGE: sensor.sensor_schema(unit_of_measurement=UNIT_VOLT, accuracy_decimals=1, device_class=DEVICE_CLASS_VOLTAGE, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L3_AC_OUTPUT_FREQUENCY: sensor.sensor_schema(unit_of_measurement=UNIT_HERTZ, accuracy_decimals=1, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L3_AC_OUTPUT_APPARENT_POWER: sensor.sensor_schema(unit_of_measurement=UNIT_VOLT_AMPS, accuracy_decimals=0, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L3_AC_OUTPUT_ACTIVE_POWER: sensor.sensor_schema(unit_of_measurement=UNIT_WATT, accuracy_decimals=0, device_class=DEVICE_CLASS_POWER, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L3_OUTPUT_LOAD_PERCENT: sensor.sensor_schema(unit_of_measurement=UNIT_PERCENT, accuracy_decimals=0, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L3_PV1_INPUT_POWER: sensor.sensor_schema(unit_of_measurement=UNIT_WATT, accuracy_decimals=0, device_class=DEVICE_CLASS_POWER, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L3_PV2_INPUT_POWER: sensor.sensor_schema(unit_of_measurement=UNIT_WATT, accuracy_decimals=0, device_class=DEVICE_CLASS_POWER, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L3_PV1_INPUT_VOLTAGE: sensor.sensor_schema(unit_of_measurement=UNIT_VOLT, accuracy_decimals=1, device_class=DEVICE_CLASS_VOLTAGE, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L3_PV2_INPUT_VOLTAGE: sensor.sensor_schema(unit_of_measurement=UNIT_VOLT, accuracy_decimals=1, device_class=DEVICE_CLASS_VOLTAGE, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L3_MAX_TEMPERATURE: sensor.sensor_schema(unit_of_measurement=UNIT_CELSIUS, accuracy_decimals=0, device_class=DEVICE_CLASS_TEMPERATURE, state_class=STATE_CLASS_MEASUREMENT),
 }
 
 CONFIG_SCHEMA = cv.Schema(
@@ -264,6 +331,39 @@ SENSOR_SETTERS = {
     CONF_PGS_PV2_INPUT_VOLTAGE: "set_pgs_pv2_input_voltage_sensor",
     CONF_PGS_MAX_TEMPERATURE: "set_pgs_max_temperature_sensor",
     CONF_TOTAL_GENERATED_ENERGY: "set_total_generated_energy_sensor",
+    # Per-phase L1
+    CONF_L1_AC_OUTPUT_VOLTAGE: "set_l1_ac_output_voltage_sensor",
+    CONF_L1_AC_OUTPUT_FREQUENCY: "set_l1_ac_output_frequency_sensor",
+    CONF_L1_AC_OUTPUT_APPARENT_POWER: "set_l1_ac_output_apparent_power_sensor",
+    CONF_L1_AC_OUTPUT_ACTIVE_POWER: "set_l1_ac_output_active_power_sensor",
+    CONF_L1_OUTPUT_LOAD_PERCENT: "set_l1_output_load_percent_sensor",
+    CONF_L1_PV1_INPUT_POWER: "set_l1_pv1_input_power_sensor",
+    CONF_L1_PV2_INPUT_POWER: "set_l1_pv2_input_power_sensor",
+    CONF_L1_PV1_INPUT_VOLTAGE: "set_l1_pv1_input_voltage_sensor",
+    CONF_L1_PV2_INPUT_VOLTAGE: "set_l1_pv2_input_voltage_sensor",
+    CONF_L1_MAX_TEMPERATURE: "set_l1_max_temperature_sensor",
+    # Per-phase L2
+    CONF_L2_AC_OUTPUT_VOLTAGE: "set_l2_ac_output_voltage_sensor",
+    CONF_L2_AC_OUTPUT_FREQUENCY: "set_l2_ac_output_frequency_sensor",
+    CONF_L2_AC_OUTPUT_APPARENT_POWER: "set_l2_ac_output_apparent_power_sensor",
+    CONF_L2_AC_OUTPUT_ACTIVE_POWER: "set_l2_ac_output_active_power_sensor",
+    CONF_L2_OUTPUT_LOAD_PERCENT: "set_l2_output_load_percent_sensor",
+    CONF_L2_PV1_INPUT_POWER: "set_l2_pv1_input_power_sensor",
+    CONF_L2_PV2_INPUT_POWER: "set_l2_pv2_input_power_sensor",
+    CONF_L2_PV1_INPUT_VOLTAGE: "set_l2_pv1_input_voltage_sensor",
+    CONF_L2_PV2_INPUT_VOLTAGE: "set_l2_pv2_input_voltage_sensor",
+    CONF_L2_MAX_TEMPERATURE: "set_l2_max_temperature_sensor",
+    # Per-phase L3
+    CONF_L3_AC_OUTPUT_VOLTAGE: "set_l3_ac_output_voltage_sensor",
+    CONF_L3_AC_OUTPUT_FREQUENCY: "set_l3_ac_output_frequency_sensor",
+    CONF_L3_AC_OUTPUT_APPARENT_POWER: "set_l3_ac_output_apparent_power_sensor",
+    CONF_L3_AC_OUTPUT_ACTIVE_POWER: "set_l3_ac_output_active_power_sensor",
+    CONF_L3_OUTPUT_LOAD_PERCENT: "set_l3_output_load_percent_sensor",
+    CONF_L3_PV1_INPUT_POWER: "set_l3_pv1_input_power_sensor",
+    CONF_L3_PV2_INPUT_POWER: "set_l3_pv2_input_power_sensor",
+    CONF_L3_PV1_INPUT_VOLTAGE: "set_l3_pv1_input_voltage_sensor",
+    CONF_L3_PV2_INPUT_VOLTAGE: "set_l3_pv2_input_voltage_sensor",
+    CONF_L3_MAX_TEMPERATURE: "set_l3_max_temperature_sensor",
 }
 
 

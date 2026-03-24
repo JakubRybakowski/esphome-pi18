@@ -220,6 +220,40 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   SUB_SENSOR(pgs_pv2_input_voltage)
   SUB_SENSOR(pgs_max_temperature)
 
+  // ── Per-phase sensors (L1=PGS0, L2=PGS1, L3=PGS2) ───────────────────────────
+  SUB_SENSOR(l1_ac_output_voltage)
+  SUB_SENSOR(l1_ac_output_frequency)
+  SUB_SENSOR(l1_ac_output_apparent_power)
+  SUB_SENSOR(l1_ac_output_active_power)
+  SUB_SENSOR(l1_output_load_percent)
+  SUB_SENSOR(l1_pv1_input_power)
+  SUB_SENSOR(l1_pv2_input_power)
+  SUB_SENSOR(l1_pv1_input_voltage)
+  SUB_SENSOR(l1_pv2_input_voltage)
+  SUB_SENSOR(l1_max_temperature)
+
+  SUB_SENSOR(l2_ac_output_voltage)
+  SUB_SENSOR(l2_ac_output_frequency)
+  SUB_SENSOR(l2_ac_output_apparent_power)
+  SUB_SENSOR(l2_ac_output_active_power)
+  SUB_SENSOR(l2_output_load_percent)
+  SUB_SENSOR(l2_pv1_input_power)
+  SUB_SENSOR(l2_pv2_input_power)
+  SUB_SENSOR(l2_pv1_input_voltage)
+  SUB_SENSOR(l2_pv2_input_voltage)
+  SUB_SENSOR(l2_max_temperature)
+
+  SUB_SENSOR(l3_ac_output_voltage)
+  SUB_SENSOR(l3_ac_output_frequency)
+  SUB_SENSOR(l3_ac_output_apparent_power)
+  SUB_SENSOR(l3_ac_output_active_power)
+  SUB_SENSOR(l3_output_load_percent)
+  SUB_SENSOR(l3_pv1_input_power)
+  SUB_SENSOR(l3_pv2_input_power)
+  SUB_SENSOR(l3_pv1_input_voltage)
+  SUB_SENSOR(l3_pv2_input_voltage)
+  SUB_SENSOR(l3_max_temperature)
+
   // ── ^P005ET sensor ───────────────────────────────────────────────────────────
   SUB_SENSOR(total_generated_energy)
 
@@ -341,7 +375,7 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   void decode_fws_(const std::vector<std::string> &f);
   void decode_mod_(const std::vector<std::string> &f);
   void decode_flag_(const std::vector<std::string> &f);
-  void decode_pgs_(const std::vector<std::string> &f);
+  void decode_pgs_(const std::vector<std::string> &f, uint8_t phase);
   void decode_et_(const std::vector<std::string> &f);
 
   // Parser helpers
