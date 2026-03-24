@@ -117,6 +117,18 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   void send_set_command(const std::string &cmd);
 
 #ifdef USE_NUMBER
+#ifdef USE_SELECT
+  // ── Select entity pointers (for syncing state from PIRI reads) ───────────────
+  void set_output_source_priority_select(select::Select *s) { output_source_priority_select_ = s; }
+  void set_charger_source_priority_select(select::Select *s) { charger_source_priority_select_ = s; }
+  void set_solar_power_priority_select(select::Select *s) { solar_power_priority_select_ = s; }
+  void set_battery_type_select(select::Select *s) { battery_type_select_ = s; }
+  void set_input_voltage_range_select(select::Select *s) { input_voltage_range_select_ = s; }
+  void set_output_mode_select(select::Select *s) { output_mode_select_ = s; }
+  void set_max_charging_current_select(select::Select *s) { max_charging_current_select_ = s; }
+  void set_max_ac_charging_current_select(select::Select *s) { max_ac_charging_current_select_ = s; }
+#endif  // USE_SELECT
+
   // ── Paired voltage handlers (called from PI18Number) ────────────────────────
   void handle_bulk_voltage(float v);
   void handle_float_voltage(float v);
@@ -282,6 +294,18 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
 
   // Command queue for set commands (fire-and-forget)
   std::vector<std::string> set_queue_;
+
+#ifdef USE_SELECT
+  // ── Select entity member pointers ────────────────────────────────────────────
+  select::Select *output_source_priority_select_{nullptr};
+  select::Select *charger_source_priority_select_{nullptr};
+  select::Select *solar_power_priority_select_{nullptr};
+  select::Select *battery_type_select_{nullptr};
+  select::Select *input_voltage_range_select_{nullptr};
+  select::Select *output_mode_select_{nullptr};
+  select::Select *max_charging_current_select_{nullptr};
+  select::Select *max_ac_charging_current_select_{nullptr};
+#endif  // USE_SELECT
 
 #ifdef USE_NUMBER
   // ── Number entity pointers ───────────────────────────────────────────────────

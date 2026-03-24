@@ -123,6 +123,19 @@ CONFIG_SCHEMA = cv.Schema(
 )
 
 
+# Keys that have a corresponding PIRI field → register pointer in parent for state sync
+PIRI_SYNCED_SELECTS = {
+    "output_source_priority_select":  "set_output_source_priority_select",
+    "charger_source_priority_select": "set_charger_source_priority_select",
+    "solar_power_priority_select":    "set_solar_power_priority_select",
+    "battery_type_select":            "set_battery_type_select",
+    "input_voltage_range_select":     "set_input_voltage_range_select",
+    "output_mode_select":             "set_output_mode_select",
+    "max_charging_current_select":    "set_max_charging_current_select",
+    "max_ac_charging_current_select": "set_max_ac_charging_current_select",
+}
+
+
 async def to_code(config):
     parent = await cg.get_variable(config[CONF_PI18_ID])
     for key, (options, multi_unit) in SELECT_ENTRIES.items():
@@ -133,3 +146,7 @@ async def to_code(config):
         cg.add(var.set_multi_unit(multi_unit))
         for option, cmd in options.items():
             cg.add(var.add_mapping(option, cmd))
+        # Register pointer so decode_piri_ can sync state
+        setter = PIRI_SYNCED_SELECTS.get(key)
+        if setter:
+            cg.add(getattr(parent, setter)(var))

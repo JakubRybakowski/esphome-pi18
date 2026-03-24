@@ -600,6 +600,39 @@ void PI18Component::decode_piri_(const std::vector<std::string> &f) {
     solar_power_priority_sensor_->publish_state(parse_float_(f[23]));
   if (mppt_string_count_sensor_ != nullptr)
     mppt_string_count_sensor_->publish_state(parse_float_(f[24]));
+
+#ifdef USE_SELECT
+  // ── Sync select entities from PIRI numeric values ────────────────────────────
+  static const char *OPP[] = {"Utility-Solar-Battery", "Solar-Utility-Battery", "Solar-Battery-Utility"};
+  static const char *CSP[] = {"Utility-first", "Solar-first", "Solar-Utility", "Solar-only"};
+  static const char *SPP[] = {"Battery-Load", "Load-Battery"};
+  static const char *BTP[] = {"AGM", "Flooded", "User-defined", "Pylontech", "WECO", "Soltaro", "LIB-compatible"};
+  static const char *IVR[] = {"Appliance", "UPS"};
+  static const char *OMD[] = {"Single", "Parallel", "Phase-1 of 3", "Phase-2 of 3", "Phase-3 of 3"};
+
+  auto pub_sel = [](select::Select *s, const char **opts, size_t n, int idx) {
+    if (s != nullptr && idx >= 0 && (size_t) idx < n)
+      s->publish_state(opts[idx]);
+  };
+  pub_sel(output_source_priority_select_, OPP, 3, parse_int_(f[17]));
+  pub_sel(charger_source_priority_select_, CSP, 4, parse_int_(f[18]));
+  pub_sel(solar_power_priority_select_, SPP, 2, parse_int_(f[23]));
+  pub_sel(battery_type_select_, BTP, 7, parse_int_(f[13]));
+  pub_sel(input_voltage_range_select_, IVR, 2, parse_int_(f[16]));
+  pub_sel(output_mode_select_, OMD, 5, parse_int_(f[22]));
+
+  // Max charging current — format as "50A", "100A" etc.
+  if (max_charging_current_select_ != nullptr) {
+    char buf[8];
+    snprintf(buf, sizeof(buf), "%dA", parse_int_(f[15]));
+    max_charging_current_select_->publish_state(buf);
+  }
+  if (max_ac_charging_current_select_ != nullptr) {
+    char buf[8];
+    snprintf(buf, sizeof(buf), "%dA", parse_int_(f[14]));
+    max_ac_charging_current_select_->publish_state(buf);
+  }
+#endif  // USE_SELECT
 }
 
 // ─── Decoder: ^P005FWS — Fault & Warning Status (17 fields) ──────────────────
