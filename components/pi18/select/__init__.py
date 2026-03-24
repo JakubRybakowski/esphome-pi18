@@ -133,6 +133,7 @@ PIRI_SYNCED_SELECTS = {
     "output_mode_select":             "set_output_mode_select",
     "max_charging_current_select":    "set_max_charging_current_select",
     "max_ac_charging_current_select": "set_max_ac_charging_current_select",
+    "ac_output_voltage_select":       "set_ac_output_voltage_select",
 }
 
 

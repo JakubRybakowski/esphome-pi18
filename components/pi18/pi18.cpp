@@ -619,9 +619,25 @@ void PI18Component::decode_piri_(const std::vector<std::string> &f) {
   pub_sel(output_source_priority_select_, OPP, 3, parse_int_(f[17]));
   pub_sel(charger_source_priority_select_, CSP, 4, parse_int_(f[18]));
   pub_sel(solar_power_priority_select_, SPP, 2, parse_int_(f[23]));
-  pub_sel(battery_type_select_, BTP, 7, parse_int_(f[13]));
+  {
+    int bt = parse_int_(f[13]);
+    ESP_LOGD(TAG, "PIRI battery_type raw=%d", bt);
+    pub_sel(battery_type_select_, BTP, 7, bt);
+  }
   pub_sel(input_voltage_range_select_, IVR, 2, parse_int_(f[16]));
   pub_sel(output_mode_select_, OMD, 5, parse_int_(f[22]));
+
+  // AC output voltage select — map from 0.1V rating value
+  if (ac_output_voltage_select_ != nullptr) {
+    int v = parse_int_(f[2]);
+    const char *vopt = nullptr;
+    if (v == 2080) vopt = "208V";
+    else if (v == 2200) vopt = "220V";
+    else if (v == 2300) vopt = "230V";
+    else if (v == 2400) vopt = "240V";
+    ESP_LOGD(TAG, "PIRI ac_output_rating_voltage raw=%d -> %s", v, vopt ? vopt : "unknown");
+    if (vopt) ac_output_voltage_select_->publish_state(vopt);
+  }
 
   // Max charging current — format as "50A", "100A" etc.
   if (max_charging_current_select_ != nullptr) {

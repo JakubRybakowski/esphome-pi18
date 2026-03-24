@@ -127,6 +127,7 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   void set_output_mode_select(select::Select *s) { output_mode_select_ = s; }
   void set_max_charging_current_select(select::Select *s) { max_charging_current_select_ = s; }
   void set_max_ac_charging_current_select(select::Select *s) { max_ac_charging_current_select_ = s; }
+  void set_ac_output_voltage_select(select::Select *s) { ac_output_voltage_select_ = s; }
 #endif  // USE_SELECT
 
   // ── Paired voltage handlers (called from PI18Number) ────────────────────────
@@ -339,6 +340,7 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   select::Select *output_mode_select_{nullptr};
   select::Select *max_charging_current_select_{nullptr};
   select::Select *max_ac_charging_current_select_{nullptr};
+  select::Select *ac_output_voltage_select_{nullptr};
 #endif  // USE_SELECT
 
 #ifdef USE_NUMBER
