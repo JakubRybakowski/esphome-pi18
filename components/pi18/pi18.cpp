@@ -164,10 +164,11 @@ void PI18Component::loop() {
 
   // ── Process set command queue (fire-and-forget, one per loop) ────────────────
   if (state_ == State::IDLE && !set_queue_.empty()) {
-    std::string cmd = set_queue_.front();
+    std::string frame = set_queue_.front();
     set_queue_.erase(set_queue_.begin());
-    send_frame_(cmd);
-    // We don't wait for ACK — just drain any response bytes later
+    // frame is already a fully built ^S<nnn><cmd><CRC><CR> — write directly
+    ESP_LOGV(TAG, "TX set frame (%zu bytes)", frame.size());
+    write_array((const uint8_t *)frame.data(), frame.size());
     last_tx_ = now;
     state_ = State::WAITING;
     return;
