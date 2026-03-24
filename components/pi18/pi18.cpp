@@ -543,8 +543,13 @@ void PI18Component::decode_piri_(const std::vector<std::string> &f) {
     battery_redischarge_voltage_number_->publish_state(redischarge_v);
 #endif
 
+  float under_v = parse_float_(f[10], 0.1f);
   if (battery_under_voltage_sensor_ != nullptr)
-    battery_under_voltage_sensor_->publish_state(parse_float_(f[10], 0.1f));
+    battery_under_voltage_sensor_->publish_state(under_v);
+#ifdef USE_NUMBER
+  if (battery_cutoff_voltage_number_ != nullptr)
+    battery_cutoff_voltage_number_->publish_state(under_v);
+#endif
 
   // f[11] = bulk voltage
   float bulk_v = parse_float_(f[11], 0.1f);
