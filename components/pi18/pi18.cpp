@@ -201,10 +201,10 @@ void PI18Component::loop() {
                              (uint8_t)response[response.size() - 1];
           uint16_t calc = pi18_crc((const uint8_t *)response.c_str(), response.size() - 2);
           if (rx_crc != calc) {
-            ESP_LOGW(TAG, "CRC mismatch: got 0x%04X expected 0x%04X", rx_crc, calc);
-            break;
+            ESP_LOGW(TAG, "CRC mismatch: got 0x%04X expected 0x%04X (processing anyway)", rx_crc, calc);
+          } else {
+            ESP_LOGV(TAG, "CRC OK");
           }
-          ESP_LOGV(TAG, "CRC OK");
 
           // Strip CRC bytes → payload
           std::string payload = response.substr(0, response.size() - 2);
