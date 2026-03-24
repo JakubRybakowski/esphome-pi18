@@ -60,7 +60,7 @@ class PI18Button : public button::Button {
 
 #ifdef USE_SELECT
 // ─── PI18 select helper ───────────────────────────────────────────────────────
-class PI18Select : public select::Select, public Component {
+class PI18Select : public select::Select {
  public:
   void set_parent(PI18Component *parent) { parent_ = parent; }
   void add_mapping(const std::string &option, const std::string &cmd) {
@@ -69,7 +69,6 @@ class PI18Select : public select::Select, public Component {
   // If true: command template contains %u for unit number,
   // will be sent for each of parent's parallel_units
   void set_multi_unit(bool v) { multi_unit_ = v; }
-  float get_setup_priority() const override { return setup_priority::DATA; }
 
  protected:
   void control(const std::string &value) override;
@@ -83,13 +82,12 @@ class PI18Select : public select::Select, public Component {
 // ─── PI18 number helper ───────────────────────────────────────────────────────
 // pair_role: 0=simple  1=bulk_voltage  2=float_voltage
 //            3=recharge_voltage  4=redischarge_voltage
-class PI18Number : public number::Number, public Component {
+class PI18Number : public number::Number {
  public:
   void set_parent(PI18Component *parent) { parent_ = parent; }
   void set_command_template(const std::string &tmpl) { command_template_ = tmpl; }
   void set_multiplier(float mult) { multiplier_ = mult; }
   void set_pair_role(uint8_t role) { pair_role_ = role; }
-  float get_setup_priority() const override { return setup_priority::DATA; }
 
  protected:
   void control(float value) override;

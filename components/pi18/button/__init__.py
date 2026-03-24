@@ -7,20 +7,16 @@ DEPENDENCIES = ["pi18"]
 
 PI18Button = pi18_ns.class_("PI18Button", button.Button)
 
-# (key, command)
 BUTTONS = {
-    "restore_defaults": "PF",    # ^S005PF — reset all settings to factory defaults
-    "clear_energy":     "CLE",   # ^S006CLE — clear total generated energy counter
+    "restore_defaults": "PF",
+    "clear_energy":     "CLE",
 }
 
 CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(CONF_PI18_ID): cv.use_id(PI18Component),
         **{
-            cv.Optional(key): button.button_schema(
-                PI18Button,
-                entity_category=cg.EntityCategory.CONFIG,
-            )
+            cv.Optional(key): button.button_schema(PI18Button)
             for key in BUTTONS
         },
     }

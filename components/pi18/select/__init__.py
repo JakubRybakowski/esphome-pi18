@@ -5,7 +5,7 @@ from .. import PI18Component, CONF_PI18_ID, pi18_ns
 
 DEPENDENCIES = ["pi18"]
 
-PI18Select = pi18_ns.class_("PI18Select", select.Select, cg.Component)
+PI18Select = pi18_ns.class_("PI18Select", select.Select)
 
 # ── Option → PI18 command mappings ────────────────────────────────────────────
 # For commands with unit number: template uses %u (filled per parallel unit)
@@ -92,11 +92,11 @@ MAX_AC_CHARGING_CURRENT_OPTIONS = {
 }
 
 OUTPUT_MODE_OPTIONS = {
-    "Single":          "POPM0,0",
-    "Parallel":        "POPM0,1",
-    "Phase-1 of 3":    "POPM0,2",
-    "Phase-2 of 3":    "POPM0,3",
-    "Phase-3 of 3":    "POPM0,4",
+    "Single":       "POPM0,0",
+    "Parallel":     "POPM0,1",
+    "Phase-1 of 3": "POPM0,2",
+    "Phase-2 of 3": "POPM0,3",
+    "Phase-3 of 3": "POPM0,4",
 }
 
 # ── (key, options_dict, multi_unit) ───────────────────────────────────────────
@@ -116,10 +116,7 @@ CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(CONF_PI18_ID): cv.use_id(PI18Component),
         **{
-            cv.Optional(key): select.select_schema(
-                PI18Select,
-                entity_category=cg.EntityCategory.CONFIG,
-            )
+            cv.Optional(key): select.select_schema(PI18Select)
             for key in SELECT_ENTRIES
         },
     }
@@ -132,7 +129,6 @@ async def to_code(config):
         if key not in config:
             continue
         var = await select.new_select(config[key], options=list(options.keys()))
-        await cg.register_component(var, config[key])
         cg.add(var.set_parent(parent))
         cg.add(var.set_multi_unit(multi_unit))
         for option, cmd in options.items():
