@@ -804,6 +804,70 @@ void PI18Component::decode_pgs_(const std::vector<std::string> &f, uint8_t phase
   if (pgs_max_temperature_sensor_ != nullptr)
     pgs_max_temperature_sensor_->publish_state(parse_float_(f[28]));
 
+  // Helper string conversions reused across PGS/per-phase
+  auto work_mode_str = [](int m) -> const char * {
+    switch (m) {
+      case 0: return "Power on"; case 1: return "Standby"; case 2: return "Bypass";
+      case 3: return "Battery";  case 4: return "Fault";   case 5: return "Hybrid";
+      default: return "Unknown";
+    }
+  };
+  auto conn_status_str = [](int s) -> const char * {
+    return s == 1 ? "Existent" : s == 0 ? "Not existent" : "Unknown";
+  };
+  auto bpd_str = [](int v) -> const char * {
+    return v == 0 ? "None" : v == 1 ? "Charge" : v == 2 ? "Discharge" : "Unknown";
+  };
+  auto dapd_str = [](int v) -> const char * {
+    return v == 0 ? "None" : v == 1 ? "AC->DC" : v == 2 ? "DC->AC" : "Unknown";
+  };
+  auto lpd_str = [](int v) -> const char * {
+    return v == 0 ? "None" : v == 1 ? "Input" : v == 2 ? "Output" : "Unknown";
+  };
+
+  const int f_conn = parse_int_(f[0]);
+  const int f_mode = parse_int_(f[1]);
+  const int f_bpd  = parse_int_(f[25]);
+  const int f_dapd = parse_int_(f[26]);
+  const int f_lpd  = parse_int_(f[27]);
+
+  // PGS-only fields (publish from PGS0 only to avoid overwrite by per-phase frames)
+  if (phase == 0) {
+    if (pgs_fault_code_sensor_ != nullptr)
+      pgs_fault_code_sensor_->publish_state(parse_float_(f[2]));
+    if (pgs_mppt1_charger_status_sensor_ != nullptr)
+      pgs_mppt1_charger_status_sensor_->publish_state(parse_float_(f[22]));
+    if (pgs_mppt2_charger_status_sensor_ != nullptr)
+      pgs_mppt2_charger_status_sensor_->publish_state(parse_float_(f[23]));
+    if (pgs_load_connected_binary_sensor_ != nullptr)
+      pgs_load_connected_binary_sensor_->publish_state(parse_int_(f[24]) == 1);
+    if (pgs_work_mode_text_sensor_ != nullptr)
+      pgs_work_mode_text_sensor_->publish_state(work_mode_str(f_mode));
+    if (pgs_connection_status_text_sensor_ != nullptr)
+      pgs_connection_status_text_sensor_->publish_state(conn_status_str(f_conn));
+    if (pgs_battery_power_direction_text_sensor_ != nullptr)
+      pgs_battery_power_direction_text_sensor_->publish_state(bpd_str(f_bpd));
+    if (pgs_dc_ac_power_direction_text_sensor_ != nullptr)
+      pgs_dc_ac_power_direction_text_sensor_->publish_state(dapd_str(f_dapd));
+    if (pgs_line_power_direction_text_sensor_ != nullptr)
+      pgs_line_power_direction_text_sensor_->publish_state(lpd_str(f_lpd));
+  }
+
+  if (phase < 3) {
+    binary_sensor::BinarySensor *ps_load_conn[3] = {l1_load_connected_binary_sensor_, l2_load_connected_binary_sensor_, l3_load_connected_binary_sensor_};
+    if (ps_load_conn[phase])
+      ps_load_conn[phase]->publish_state(parse_int_(f[24]) == 1);
+
+    text_sensor::TextSensor *ps_work_mode[3] = {l1_work_mode_text_sensor_, l2_work_mode_text_sensor_, l3_work_mode_text_sensor_};
+    text_sensor::TextSensor *ps_bpd[3]       = {l1_battery_power_direction_text_sensor_, l2_battery_power_direction_text_sensor_, l3_battery_power_direction_text_sensor_};
+    text_sensor::TextSensor *ps_dapd[3]      = {l1_dc_ac_power_direction_text_sensor_, l2_dc_ac_power_direction_text_sensor_, l3_dc_ac_power_direction_text_sensor_};
+    text_sensor::TextSensor *ps_lpd[3]       = {l1_line_power_direction_text_sensor_, l2_line_power_direction_text_sensor_, l3_line_power_direction_text_sensor_};
+    if (ps_work_mode[phase]) ps_work_mode[phase]->publish_state(work_mode_str(f_mode));
+    if (ps_bpd[phase])       ps_bpd[phase]->publish_state(bpd_str(f_bpd));
+    if (ps_dapd[phase])      ps_dapd[phase]->publish_state(dapd_str(f_dapd));
+    if (ps_lpd[phase])       ps_lpd[phase]->publish_state(lpd_str(f_lpd));
+  }
+
   // Per-phase (L1/L2/L3) sensors
   if (phase < 3) {
     sensor::Sensor *ps_ac_voltage[3]     = {l1_ac_output_voltage_sensor_,     l2_ac_output_voltage_sensor_,     l3_ac_output_voltage_sensor_};
@@ -816,17 +880,21 @@ void PI18Component::decode_pgs_(const std::vector<std::string> &f, uint8_t phase
     sensor::Sensor *ps_pv1_voltage[3]    = {l1_pv1_input_voltage_sensor_,     l2_pv1_input_voltage_sensor_,     l3_pv1_input_voltage_sensor_};
     sensor::Sensor *ps_pv2_voltage[3]    = {l1_pv2_input_voltage_sensor_,     l2_pv2_input_voltage_sensor_,     l3_pv2_input_voltage_sensor_};
     sensor::Sensor *ps_temperature[3]    = {l1_max_temperature_sensor_,       l2_max_temperature_sensor_,       l3_max_temperature_sensor_};
+    sensor::Sensor *ps_batt_discharge[3] = {l1_battery_discharge_current_sensor_, l2_battery_discharge_current_sensor_, l3_battery_discharge_current_sensor_};
+    sensor::Sensor *ps_batt_charge[3]    = {l1_battery_charging_current_sensor_,  l2_battery_charging_current_sensor_,  l3_battery_charging_current_sensor_};
 
-    if (ps_ac_voltage[phase])   ps_ac_voltage[phase]->publish_state(parse_float_(f[5], 0.1f));
-    if (ps_ac_frequency[phase]) ps_ac_frequency[phase]->publish_state(parse_float_(f[6], 0.1f));
-    if (ps_apparent[phase])     ps_apparent[phase]->publish_state(parse_float_(f[7]));
-    if (ps_active[phase])       ps_active[phase]->publish_state(parse_float_(f[8]));
-    if (ps_load_pct[phase])     ps_load_pct[phase]->publish_state(parse_float_(f[11]));
-    if (ps_pv1_power[phase])    ps_pv1_power[phase]->publish_state(parse_float_(f[18]));
-    if (ps_pv2_power[phase])    ps_pv2_power[phase]->publish_state(parse_float_(f[19]));
-    if (ps_pv1_voltage[phase])  ps_pv1_voltage[phase]->publish_state(parse_float_(f[20], 0.1f));
-    if (ps_pv2_voltage[phase])  ps_pv2_voltage[phase]->publish_state(parse_float_(f[21], 0.1f));
-    if (ps_temperature[phase])  ps_temperature[phase]->publish_state(parse_float_(f[28]));
+    if (ps_ac_voltage[phase])    ps_ac_voltage[phase]->publish_state(parse_float_(f[5], 0.1f));
+    if (ps_ac_frequency[phase])  ps_ac_frequency[phase]->publish_state(parse_float_(f[6], 0.1f));
+    if (ps_apparent[phase])      ps_apparent[phase]->publish_state(parse_float_(f[7]));
+    if (ps_active[phase])        ps_active[phase]->publish_state(parse_float_(f[8]));
+    if (ps_load_pct[phase])      ps_load_pct[phase]->publish_state(parse_float_(f[11]));
+    if (ps_pv1_power[phase])     ps_pv1_power[phase]->publish_state(parse_float_(f[18]));
+    if (ps_pv2_power[phase])     ps_pv2_power[phase]->publish_state(parse_float_(f[19]));
+    if (ps_pv1_voltage[phase])   ps_pv1_voltage[phase]->publish_state(parse_float_(f[20], 0.1f));
+    if (ps_pv2_voltage[phase])   ps_pv2_voltage[phase]->publish_state(parse_float_(f[21], 0.1f));
+    if (ps_temperature[phase])   ps_temperature[phase]->publish_state(parse_float_(f[28]));
+    if (ps_batt_discharge[phase]) ps_batt_discharge[phase]->publish_state(parse_float_(f[14]));
+    if (ps_batt_charge[phase])   ps_batt_charge[phase]->publish_state(parse_float_(f[15]));
   }
 }
 

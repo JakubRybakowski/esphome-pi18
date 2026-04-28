@@ -9,6 +9,10 @@ BINARY_SENSORS = {
     # ^P005GS
     "setting_changed": "set_setting_changed_binary_sensor",
     "load_connected": "set_load_connected_binary_sensor",
+    "pgs_load_connected": "set_pgs_load_connected_binary_sensor",
+    "l1_load_connected": "set_l1_load_connected_binary_sensor",
+    "l2_load_connected": "set_l2_load_connected_binary_sensor",
+    "l3_load_connected": "set_l3_load_connected_binary_sensor",
     # ^P005FWS
     "warning_line_fail": "set_warning_line_fail_binary_sensor",
     "warning_output_circuit_short": "set_warning_output_circuit_short_binary_sensor",

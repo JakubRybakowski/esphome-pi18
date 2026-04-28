@@ -15,6 +15,27 @@ TEXT_SENSORS = {
     "protocol_id":                   "set_protocol_id_text_sensor",
     "serial_number":                 "set_serial_number_text_sensor",
     "firmware_version":              "set_firmware_version_text_sensor",
+    # PGS (parallel group, unit 0)
+    "pgs_work_mode":                 "set_pgs_work_mode_text_sensor",
+    "pgs_connection_status":         "set_pgs_connection_status_text_sensor",
+    "pgs_battery_power_direction":   "set_pgs_battery_power_direction_text_sensor",
+    "pgs_dc_ac_power_direction":     "set_pgs_dc_ac_power_direction_text_sensor",
+    "pgs_line_power_direction":      "set_pgs_line_power_direction_text_sensor",
+    # Per-phase L1
+    "l1_work_mode":                  "set_l1_work_mode_text_sensor",
+    "l1_battery_power_direction":    "set_l1_battery_power_direction_text_sensor",
+    "l1_dc_ac_power_direction":      "set_l1_dc_ac_power_direction_text_sensor",
+    "l1_line_power_direction":       "set_l1_line_power_direction_text_sensor",
+    # Per-phase L2
+    "l2_work_mode":                  "set_l2_work_mode_text_sensor",
+    "l2_battery_power_direction":    "set_l2_battery_power_direction_text_sensor",
+    "l2_dc_ac_power_direction":      "set_l2_dc_ac_power_direction_text_sensor",
+    "l2_line_power_direction":       "set_l2_line_power_direction_text_sensor",
+    # Per-phase L3
+    "l3_work_mode":                  "set_l3_work_mode_text_sensor",
+    "l3_battery_power_direction":    "set_l3_battery_power_direction_text_sensor",
+    "l3_dc_ac_power_direction":      "set_l3_dc_ac_power_direction_text_sensor",
+    "l3_line_power_direction":       "set_l3_line_power_direction_text_sensor",
 }
 
 CONFIG_SCHEMA = cv.Schema(

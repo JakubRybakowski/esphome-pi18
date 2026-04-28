@@ -100,6 +100,9 @@ CONF_PGS_PV2_INPUT_POWER = "pgs_pv2_input_power"
 CONF_PGS_PV1_INPUT_VOLTAGE = "pgs_pv1_input_voltage"
 CONF_PGS_PV2_INPUT_VOLTAGE = "pgs_pv2_input_voltage"
 CONF_PGS_MAX_TEMPERATURE = "pgs_max_temperature"
+CONF_PGS_FAULT_CODE = "pgs_fault_code"
+CONF_PGS_MPPT1_CHARGER_STATUS = "pgs_mppt1_charger_status"
+CONF_PGS_MPPT2_CHARGER_STATUS = "pgs_mppt2_charger_status"
 
 # ^P005ET
 CONF_TOTAL_GENERATED_ENERGY = "total_generated_energy"
@@ -115,6 +118,8 @@ CONF_L1_PV2_INPUT_POWER = "l1_pv2_input_power"
 CONF_L1_PV1_INPUT_VOLTAGE = "l1_pv1_input_voltage"
 CONF_L1_PV2_INPUT_VOLTAGE = "l1_pv2_input_voltage"
 CONF_L1_MAX_TEMPERATURE = "l1_max_temperature"
+CONF_L1_BATTERY_DISCHARGE_CURRENT = "l1_battery_discharge_current"
+CONF_L1_BATTERY_CHARGING_CURRENT = "l1_battery_charging_current"
 
 CONF_L2_AC_OUTPUT_VOLTAGE = "l2_ac_output_voltage"
 CONF_L2_AC_OUTPUT_FREQUENCY = "l2_ac_output_frequency"
@@ -126,6 +131,8 @@ CONF_L2_PV2_INPUT_POWER = "l2_pv2_input_power"
 CONF_L2_PV1_INPUT_VOLTAGE = "l2_pv1_input_voltage"
 CONF_L2_PV2_INPUT_VOLTAGE = "l2_pv2_input_voltage"
 CONF_L2_MAX_TEMPERATURE = "l2_max_temperature"
+CONF_L2_BATTERY_DISCHARGE_CURRENT = "l2_battery_discharge_current"
+CONF_L2_BATTERY_CHARGING_CURRENT = "l2_battery_charging_current"
 
 CONF_L3_AC_OUTPUT_VOLTAGE = "l3_ac_output_voltage"
 CONF_L3_AC_OUTPUT_FREQUENCY = "l3_ac_output_frequency"
@@ -137,6 +144,8 @@ CONF_L3_PV2_INPUT_POWER = "l3_pv2_input_power"
 CONF_L3_PV1_INPUT_VOLTAGE = "l3_pv1_input_voltage"
 CONF_L3_PV2_INPUT_VOLTAGE = "l3_pv2_input_voltage"
 CONF_L3_MAX_TEMPERATURE = "l3_max_temperature"
+CONF_L3_BATTERY_DISCHARGE_CURRENT = "l3_battery_discharge_current"
+CONF_L3_BATTERY_CHARGING_CURRENT = "l3_battery_charging_current"
 
 SENSOR_SCHEMAS = {
     # GS
@@ -213,6 +222,15 @@ SENSOR_SCHEMAS = {
     CONF_PGS_PV1_INPUT_VOLTAGE: sensor.sensor_schema(unit_of_measurement=UNIT_VOLT, accuracy_decimals=1, device_class=DEVICE_CLASS_VOLTAGE, state_class=STATE_CLASS_MEASUREMENT),
     CONF_PGS_PV2_INPUT_VOLTAGE: sensor.sensor_schema(unit_of_measurement=UNIT_VOLT, accuracy_decimals=1, device_class=DEVICE_CLASS_VOLTAGE, state_class=STATE_CLASS_MEASUREMENT),
     CONF_PGS_MAX_TEMPERATURE: sensor.sensor_schema(unit_of_measurement=UNIT_CELSIUS, accuracy_decimals=0, device_class=DEVICE_CLASS_TEMPERATURE, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_PGS_FAULT_CODE: sensor.sensor_schema(accuracy_decimals=0, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_PGS_MPPT1_CHARGER_STATUS: sensor.sensor_schema(accuracy_decimals=0, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_PGS_MPPT2_CHARGER_STATUS: sensor.sensor_schema(accuracy_decimals=0, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L1_BATTERY_DISCHARGE_CURRENT: sensor.sensor_schema(unit_of_measurement=UNIT_AMPERE, accuracy_decimals=0, device_class=DEVICE_CLASS_CURRENT, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L1_BATTERY_CHARGING_CURRENT: sensor.sensor_schema(unit_of_measurement=UNIT_AMPERE, accuracy_decimals=0, device_class=DEVICE_CLASS_CURRENT, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L2_BATTERY_DISCHARGE_CURRENT: sensor.sensor_schema(unit_of_measurement=UNIT_AMPERE, accuracy_decimals=0, device_class=DEVICE_CLASS_CURRENT, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L2_BATTERY_CHARGING_CURRENT: sensor.sensor_schema(unit_of_measurement=UNIT_AMPERE, accuracy_decimals=0, device_class=DEVICE_CLASS_CURRENT, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L3_BATTERY_DISCHARGE_CURRENT: sensor.sensor_schema(unit_of_measurement=UNIT_AMPERE, accuracy_decimals=0, device_class=DEVICE_CLASS_CURRENT, state_class=STATE_CLASS_MEASUREMENT),
+    CONF_L3_BATTERY_CHARGING_CURRENT: sensor.sensor_schema(unit_of_measurement=UNIT_AMPERE, accuracy_decimals=0, device_class=DEVICE_CLASS_CURRENT, state_class=STATE_CLASS_MEASUREMENT),
     # ET
     CONF_TOTAL_GENERATED_ENERGY: sensor.sensor_schema(unit_of_measurement=UNIT_WATT_HOURS, accuracy_decimals=0, device_class=DEVICE_CLASS_ENERGY, state_class=STATE_CLASS_TOTAL_INCREASING),
     # Per-phase L1
@@ -330,6 +348,15 @@ SENSOR_SETTERS = {
     CONF_PGS_PV1_INPUT_VOLTAGE: "set_pgs_pv1_input_voltage_sensor",
     CONF_PGS_PV2_INPUT_VOLTAGE: "set_pgs_pv2_input_voltage_sensor",
     CONF_PGS_MAX_TEMPERATURE: "set_pgs_max_temperature_sensor",
+    CONF_PGS_FAULT_CODE: "set_pgs_fault_code_sensor",
+    CONF_PGS_MPPT1_CHARGER_STATUS: "set_pgs_mppt1_charger_status_sensor",
+    CONF_PGS_MPPT2_CHARGER_STATUS: "set_pgs_mppt2_charger_status_sensor",
+    CONF_L1_BATTERY_DISCHARGE_CURRENT: "set_l1_battery_discharge_current_sensor",
+    CONF_L1_BATTERY_CHARGING_CURRENT: "set_l1_battery_charging_current_sensor",
+    CONF_L2_BATTERY_DISCHARGE_CURRENT: "set_l2_battery_discharge_current_sensor",
+    CONF_L2_BATTERY_CHARGING_CURRENT: "set_l2_battery_charging_current_sensor",
+    CONF_L3_BATTERY_DISCHARGE_CURRENT: "set_l3_battery_discharge_current_sensor",
+    CONF_L3_BATTERY_CHARGING_CURRENT: "set_l3_battery_charging_current_sensor",
     CONF_TOTAL_GENERATED_ENERGY: "set_total_generated_energy_sensor",
     # Per-phase L1
     CONF_L1_AC_OUTPUT_VOLTAGE: "set_l1_ac_output_voltage_sensor",

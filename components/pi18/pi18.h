@@ -220,6 +220,9 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   SUB_SENSOR(pgs_pv1_input_voltage)
   SUB_SENSOR(pgs_pv2_input_voltage)
   SUB_SENSOR(pgs_max_temperature)
+  SUB_SENSOR(pgs_fault_code)
+  SUB_SENSOR(pgs_mppt1_charger_status)
+  SUB_SENSOR(pgs_mppt2_charger_status)
 
   // ── Per-phase sensors (L1=PGS0, L2=PGS1, L3=PGS2) ───────────────────────────
   SUB_SENSOR(l1_ac_output_voltage)
@@ -232,6 +235,8 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   SUB_SENSOR(l1_pv1_input_voltage)
   SUB_SENSOR(l1_pv2_input_voltage)
   SUB_SENSOR(l1_max_temperature)
+  SUB_SENSOR(l1_battery_discharge_current)
+  SUB_SENSOR(l1_battery_charging_current)
 
   SUB_SENSOR(l2_ac_output_voltage)
   SUB_SENSOR(l2_ac_output_frequency)
@@ -243,6 +248,8 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   SUB_SENSOR(l2_pv1_input_voltage)
   SUB_SENSOR(l2_pv2_input_voltage)
   SUB_SENSOR(l2_max_temperature)
+  SUB_SENSOR(l2_battery_discharge_current)
+  SUB_SENSOR(l2_battery_charging_current)
 
   SUB_SENSOR(l3_ac_output_voltage)
   SUB_SENSOR(l3_ac_output_frequency)
@@ -254,6 +261,8 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   SUB_SENSOR(l3_pv1_input_voltage)
   SUB_SENSOR(l3_pv2_input_voltage)
   SUB_SENSOR(l3_max_temperature)
+  SUB_SENSOR(l3_battery_discharge_current)
+  SUB_SENSOR(l3_battery_charging_current)
 
   // ── ^P005ET sensor ───────────────────────────────────────────────────────────
   SUB_SENSOR(total_generated_energy)
@@ -261,6 +270,10 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   // ── Binary sensors ^P005GS ───────────────────────────────────────────────────
   SUB_BINARY_SENSOR(setting_changed)
   SUB_BINARY_SENSOR(load_connected)
+  SUB_BINARY_SENSOR(pgs_load_connected)
+  SUB_BINARY_SENSOR(l1_load_connected)
+  SUB_BINARY_SENSOR(l2_load_connected)
+  SUB_BINARY_SENSOR(l3_load_connected)
 
   // ── Binary sensors ^P005FWS ──────────────────────────────────────────────────
   SUB_BINARY_SENSOR(warning_line_fail)
@@ -300,6 +313,25 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   SUB_TEXT_SENSOR(protocol_id)
   SUB_TEXT_SENSOR(serial_number)
   SUB_TEXT_SENSOR(firmware_version)
+
+  // PGS / per-phase text sensors
+  SUB_TEXT_SENSOR(pgs_work_mode)
+  SUB_TEXT_SENSOR(pgs_connection_status)
+  SUB_TEXT_SENSOR(pgs_battery_power_direction)
+  SUB_TEXT_SENSOR(pgs_dc_ac_power_direction)
+  SUB_TEXT_SENSOR(pgs_line_power_direction)
+  SUB_TEXT_SENSOR(l1_work_mode)
+  SUB_TEXT_SENSOR(l1_battery_power_direction)
+  SUB_TEXT_SENSOR(l1_dc_ac_power_direction)
+  SUB_TEXT_SENSOR(l1_line_power_direction)
+  SUB_TEXT_SENSOR(l2_work_mode)
+  SUB_TEXT_SENSOR(l2_battery_power_direction)
+  SUB_TEXT_SENSOR(l2_dc_ac_power_direction)
+  SUB_TEXT_SENSOR(l2_line_power_direction)
+  SUB_TEXT_SENSOR(l3_work_mode)
+  SUB_TEXT_SENSOR(l3_battery_power_direction)
+  SUB_TEXT_SENSOR(l3_dc_ac_power_direction)
+  SUB_TEXT_SENSOR(l3_line_power_direction)
 
  protected:
   // ── Internals ────────────────────────────────────────────────────────────────
