@@ -330,7 +330,18 @@ void PI18Component::build_poll_commands_() {
   bg_tasks_.clear();
 
   // ── LIVE: round-robin every tick ────────────────────────────────────────────
-  live_commands_.push_back("GS");
+  // GS only if user actually configured a GS-only sensor (heat sink temp,
+  // MPPT temps, SCC voltages, parallel ID, setting-changed flag). All other
+  // GS data is available via PGS0/L1/L2/L3.
+  bool needs_gs =
+      inverter_heatsink_temperature_sensor_ != nullptr ||
+      mppt1_charger_temperature_sensor_ != nullptr ||
+      mppt2_charger_temperature_sensor_ != nullptr ||
+      battery_voltage_scc1_sensor_ != nullptr ||
+      battery_voltage_scc2_sensor_ != nullptr ||
+      local_parallel_id_sensor_ != nullptr ||
+      setting_changed_binary_sensor_ != nullptr;
+  if (needs_gs) live_commands_.push_back("GS");
   for (uint8_t i = 0; i < parallel_units_; i++)
     live_commands_.push_back(std::string("PGS") + (char)('0' + i));
 
