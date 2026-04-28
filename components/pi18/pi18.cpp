@@ -214,10 +214,9 @@ void PI18Component::loop() {
           // Strip CRC bytes → payload
           std::string payload = response.substr(0, response.size() - 2);
 
-          // Which command did we just send?
-          if (!poll_commands_.empty()) {
-            dispatch_response_(poll_commands_[(poll_index_ == 0 ? poll_commands_.size() : poll_index_) - 1],
-                               payload);
+          // Which command did we just send? (set by sender in update())
+          if (!last_sent_cmd_.empty()) {
+            dispatch_response_(last_sent_cmd_, payload);
           }
           break;
         }
@@ -239,91 +238,123 @@ void PI18Component::loop() {
 
 // ─── Update (called on polling interval) ─────────────────────────────────────
 void PI18Component::update() {
-  // Rebuild date-parameterised poll commands when day changes (or first time
-  // time becomes valid after boot before time sync).
+  // Rebuild date-parameterised poll commands when day changes
   if (time_ != nullptr) {
     auto now = time_->now();
     if (now.is_valid() && now.day_of_year != last_built_yday_ &&
         (yearly_energy_sensor_ != nullptr || monthly_energy_sensor_ != nullptr ||
          daily_energy_sensor_ != nullptr)) {
-      ESP_LOGI(TAG, "Time-driven rebuild of poll list (yday %d -> %d)",
+      ESP_LOGI(TAG, "Time-driven rebuild of poll plan (yday %d -> %d)",
                last_built_yday_, now.day_of_year);
-      auto saved_index = poll_index_;
       build_poll_commands_();
-      if (saved_index < poll_commands_.size()) poll_index_ = saved_index;
-      else poll_index_ = 0;
     }
   }
-
-  if (poll_commands_.empty()) return;
 
   if (state_ != State::IDLE) {
     ESP_LOGD(TAG, "Still waiting for previous response, skipping poll tick");
     return;
   }
 
-  const std::string &cmd = poll_commands_[poll_index_];
-  ESP_LOGD(TAG, "Polling [%zu/%zu]: %s", poll_index_ + 1, poll_commands_.size(), cmd.c_str());
+  cycle_counter_++;
+
+  // 1) Background task due? (one-shot or period elapsed) — sent first.
+  for (auto &bg : bg_tasks_) {
+    if (bg.period_cycles == 0) {
+      if (bg.one_shot_done) continue;
+    } else {
+      uint32_t elapsed = bg.last_sent_cycle == 0 ? bg.period_cycles
+                                                 : (cycle_counter_ - bg.last_sent_cycle);
+      if (elapsed < bg.period_cycles) continue;
+    }
+    ESP_LOGD(TAG, "Polling [bg]: %s (period=%u, last=%u)",
+             bg.cmd.c_str(), bg.period_cycles, bg.last_sent_cycle);
+    last_sent_cmd_ = bg.cmd;
+    send_frame_(bg.cmd);
+    last_tx_ = millis();
+    state_ = State::WAITING;
+    bg.last_sent_cycle = cycle_counter_;
+    bg.one_shot_done = true;
+    return;
+  }
+
+  // 2) Otherwise rotate live list
+  if (live_commands_.empty()) return;
+  const std::string &cmd = live_commands_[live_index_];
+  ESP_LOGD(TAG, "Polling [live %zu/%zu]: %s",
+           live_index_ + 1, live_commands_.size(), cmd.c_str());
+  last_sent_cmd_ = cmd;
   send_frame_(cmd);
   last_tx_ = millis();
   state_ = State::WAITING;
-  poll_index_ = (poll_index_ + 1) % poll_commands_.size();
+  live_index_ = (live_index_ + 1) % live_commands_.size();
 }
 
 // ─── Build poll command list ──────────────────────────────────────────────────
 void PI18Component::build_poll_commands_() {
-  poll_commands_.clear();
-  // Always poll these:
-  poll_commands_.push_back("GS");    // General status
-  poll_commands_.push_back("PIRI");  // Rated info
-  poll_commands_.push_back("FWS");   // Faults & warnings
-  poll_commands_.push_back("MOD");   // Working mode
-  poll_commands_.push_back("FLAG");  // Flags
-  poll_commands_.push_back("ET");    // Total energy
+  // Tiered polling. update_interval = 5s (configurable in YAML).
+  //   LIVE (every tick) — current power, currents, directions, batteries
+  //   MEDIUM (every 4 ticks) — mode + warnings + flags
+  //   SLOW (every 12 ticks) — rated info / settings
+  //   HOURLY (every 720 ticks ≈ 1h) — totals / static config
+  //   ONCE — info that never changes (serial, firmware, protocol id)
+  live_commands_.clear();
+  bg_tasks_.clear();
 
-  // Parallel group status for each unit
-  for (uint8_t i = 0; i < parallel_units_; i++) {
-    poll_commands_.push_back(std::string("PGS") + (char)('0' + i));
-  }
+  // ── LIVE: round-robin every tick ────────────────────────────────────────────
+  live_commands_.push_back("GS");
+  for (uint8_t i = 0; i < parallel_units_; i++)
+    live_commands_.push_back(std::string("PGS") + (char)('0' + i));
 
-  // Informational — only poll when sensors are configured
-  if (protocol_id_text_sensor_ != nullptr)
-    poll_commands_.push_back("PI");
-  if (serial_number_text_sensor_ != nullptr)
-    poll_commands_.push_back("ID");
-  if (firmware_version_text_sensor_ != nullptr)
-    poll_commands_.push_back("VFW");
+  auto add_bg = [&](const std::string &cmd, uint16_t period) {
+    bg_tasks_.push_back({cmd, period, 0, false});
+  };
 
-  // AC charge / supply load time buckets — static commands
-  if (ac_charge_time_bucket_text_sensor_ != nullptr)
-    poll_commands_.push_back("ACCT");
-  if (ac_supply_load_time_bucket_text_sensor_ != nullptr)
-    poll_commands_.push_back("ACLT");
+  // ── MEDIUM (~20s) ───────────────────────────────────────────────────────────
+  add_bg("MOD",  4);
+  add_bg("FWS",  4);
+  add_bg("FLAG", 4);
 
-  // Device time
-  if (device_time_text_sensor_ != nullptr)
-    poll_commands_.push_back("T");
+  // ── SLOW (~60s) ─────────────────────────────────────────────────────────────
+  add_bg("PIRI", 12);
 
-  // Date-parameterised energy queries — only if time component is available
+  // ── HOURLY (~1h) — only if sensors configured ──────────────────────────────
+  if (total_generated_energy_sensor_ != nullptr) add_bg("ET", 720);
+
+  // ── ONCE — read once at boot, rarely changes ───────────────────────────────
+  if (ac_charge_time_bucket_text_sensor_ != nullptr) add_bg("ACCT", 0);
+  if (ac_supply_load_time_bucket_text_sensor_ != nullptr) add_bg("ACLT", 0);
+  if (device_time_text_sensor_ != nullptr) add_bg("T", 0);
+
+  // ── ONCE (one-shot, fired on first tick) ───────────────────────────────────
+  if (protocol_id_text_sensor_ != nullptr) add_bg("PI", 0);
+  if (serial_number_text_sensor_ != nullptr) add_bg("ID", 0);
+  if (firmware_version_text_sensor_ != nullptr) add_bg("VFW", 0);
+
+  // ── Date-parameterised energy queries: rebuild lazily, only if time valid ──
   if (time_ != nullptr) {
     auto now = time_->now();
     if (now.is_valid()) {
       char buf[16];
       if (yearly_energy_sensor_ != nullptr) {
         snprintf(buf, sizeof(buf), "EY%04d", now.year);
-        poll_commands_.push_back(buf);
+        add_bg(buf, 720);
       }
       if (monthly_energy_sensor_ != nullptr) {
         snprintf(buf, sizeof(buf), "EM%04d%02d", now.year, now.month);
-        poll_commands_.push_back(buf);
+        add_bg(buf, 720);
       }
       if (daily_energy_sensor_ != nullptr) {
         snprintf(buf, sizeof(buf), "ED%04d%02d%02d", now.year, now.month, now.day_of_month);
-        poll_commands_.push_back(buf);
+        add_bg(buf, 60);  // refresh more often (~5min) for live daily totals
       }
       last_built_yday_ = now.day_of_year;
     }
   }
+
+  // Compatibility shim: keep poll_commands_ populated for any legacy reference
+  poll_commands_ = live_commands_;
+  ESP_LOGI(TAG, "Poll plan: %u live commands, %u background tasks",
+           (unsigned)live_commands_.size(), (unsigned)bg_tasks_.size());
 }
 
 void PI18Component::send_set_date_time() {

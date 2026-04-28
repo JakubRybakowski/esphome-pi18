@@ -374,8 +374,26 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
 
   // Poll state
   State state_{State::IDLE};
+
+  // Tiered polling:
+  //   live_commands_  → round-robin every tick (highest priority)
+  //   bg_tasks_       → fire when due (period_cycles or one-shot)
+  struct BgTask {
+    std::string cmd;
+    uint16_t period_cycles;   // 0 = one-shot
+    uint32_t last_sent_cycle; // 0 = never
+    bool one_shot_done;
+  };
+  std::vector<std::string> live_commands_;
+  std::vector<BgTask> bg_tasks_;
+  size_t live_index_{0};
+  uint32_t cycle_counter_{0};
+  std::string last_sent_cmd_;     // for response dispatch (matches what we sent)
+
+  // Backwards-compat: kept so other code that references poll_commands_ still works
   std::vector<std::string> poll_commands_;
   size_t poll_index_{0};
+
   uint32_t last_tx_{0};
   uint32_t tx_timeout_{2000};  // ms to wait for response
 
