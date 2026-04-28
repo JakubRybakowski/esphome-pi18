@@ -917,46 +917,51 @@ void PI18Component::decode_pgs_(const std::vector<std::string> &f, uint8_t phase
   // f[27] = line power direction
   // f[28] = max temperature (°C)
 
-  if (pgs_grid_voltage_sensor_ != nullptr)
-    pgs_grid_voltage_sensor_->publish_state(parse_float_(f[3], 0.1f));
-  if (pgs_grid_frequency_sensor_ != nullptr)
-    pgs_grid_frequency_sensor_->publish_state(parse_float_(f[4], 0.1f));
-  if (pgs_ac_output_voltage_sensor_ != nullptr)
-    pgs_ac_output_voltage_sensor_->publish_state(parse_float_(f[5], 0.1f));
-  if (pgs_ac_output_frequency_sensor_ != nullptr)
-    pgs_ac_output_frequency_sensor_->publish_state(parse_float_(f[6], 0.1f));
-  if (pgs_ac_output_apparent_power_sensor_ != nullptr)
-    pgs_ac_output_apparent_power_sensor_->publish_state(parse_float_(f[7]));
-  if (pgs_ac_output_active_power_sensor_ != nullptr)
-    pgs_ac_output_active_power_sensor_->publish_state(parse_float_(f[8]));
-  if (pgs_total_ac_output_apparent_power_sensor_ != nullptr)
-    pgs_total_ac_output_apparent_power_sensor_->publish_state(parse_float_(f[9]));
-  if (pgs_total_ac_output_active_power_sensor_ != nullptr)
-    pgs_total_ac_output_active_power_sensor_->publish_state(parse_float_(f[10]));
-  if (pgs_output_load_percent_sensor_ != nullptr)
-    pgs_output_load_percent_sensor_->publish_state(parse_float_(f[11]));
-  if (pgs_total_output_load_percent_sensor_ != nullptr)
-    pgs_total_output_load_percent_sensor_->publish_state(parse_float_(f[12]));
-  if (pgs_battery_voltage_sensor_ != nullptr)
-    pgs_battery_voltage_sensor_->publish_state(parse_float_(f[13], 0.1f));
-  if (pgs_battery_discharge_current_sensor_ != nullptr)
-    pgs_battery_discharge_current_sensor_->publish_state(parse_float_(f[14]));
-  if (pgs_battery_charging_current_sensor_ != nullptr)
-    pgs_battery_charging_current_sensor_->publish_state(parse_float_(f[15]));
-  if (pgs_total_battery_charging_current_sensor_ != nullptr)
-    pgs_total_battery_charging_current_sensor_->publish_state(parse_float_(f[16]));
-  if (pgs_battery_capacity_sensor_ != nullptr)
-    pgs_battery_capacity_sensor_->publish_state(parse_float_(f[17]));
-  if (pgs_pv1_input_power_sensor_ != nullptr)
-    pgs_pv1_input_power_sensor_->publish_state(parse_float_(f[18]));
-  if (pgs_pv2_input_power_sensor_ != nullptr)
-    pgs_pv2_input_power_sensor_->publish_state(parse_float_(f[19]));
-  if (pgs_pv1_input_voltage_sensor_ != nullptr)
-    pgs_pv1_input_voltage_sensor_->publish_state(parse_float_(f[20], 0.1f));
-  if (pgs_pv2_input_voltage_sensor_ != nullptr)
-    pgs_pv2_input_voltage_sensor_->publish_state(parse_float_(f[21], 0.1f));
-  if (pgs_max_temperature_sensor_ != nullptr)
-    pgs_max_temperature_sensor_->publish_state(parse_float_(f[28]));
+  // All `pgs_*` sensors are master/system-wide views and should come ONLY from
+  // PGS0. Otherwise PGS1/PGS2 overwrite them with per-slave views every cycle,
+  // which causes flicker (e.g. total power jumping between 200W and 2000W).
+  if (phase == 0) {
+    if (pgs_grid_voltage_sensor_ != nullptr)
+      pgs_grid_voltage_sensor_->publish_state(parse_float_(f[3], 0.1f));
+    if (pgs_grid_frequency_sensor_ != nullptr)
+      pgs_grid_frequency_sensor_->publish_state(parse_float_(f[4], 0.1f));
+    if (pgs_ac_output_voltage_sensor_ != nullptr)
+      pgs_ac_output_voltage_sensor_->publish_state(parse_float_(f[5], 0.1f));
+    if (pgs_ac_output_frequency_sensor_ != nullptr)
+      pgs_ac_output_frequency_sensor_->publish_state(parse_float_(f[6], 0.1f));
+    if (pgs_ac_output_apparent_power_sensor_ != nullptr)
+      pgs_ac_output_apparent_power_sensor_->publish_state(parse_float_(f[7]));
+    if (pgs_ac_output_active_power_sensor_ != nullptr)
+      pgs_ac_output_active_power_sensor_->publish_state(parse_float_(f[8]));
+    if (pgs_total_ac_output_apparent_power_sensor_ != nullptr)
+      pgs_total_ac_output_apparent_power_sensor_->publish_state(parse_float_(f[9]));
+    if (pgs_total_ac_output_active_power_sensor_ != nullptr)
+      pgs_total_ac_output_active_power_sensor_->publish_state(parse_float_(f[10]));
+    if (pgs_output_load_percent_sensor_ != nullptr)
+      pgs_output_load_percent_sensor_->publish_state(parse_float_(f[11]));
+    if (pgs_total_output_load_percent_sensor_ != nullptr)
+      pgs_total_output_load_percent_sensor_->publish_state(parse_float_(f[12]));
+    if (pgs_battery_voltage_sensor_ != nullptr)
+      pgs_battery_voltage_sensor_->publish_state(parse_float_(f[13], 0.1f));
+    if (pgs_battery_discharge_current_sensor_ != nullptr)
+      pgs_battery_discharge_current_sensor_->publish_state(parse_float_(f[14]));
+    if (pgs_battery_charging_current_sensor_ != nullptr)
+      pgs_battery_charging_current_sensor_->publish_state(parse_float_(f[15]));
+    if (pgs_total_battery_charging_current_sensor_ != nullptr)
+      pgs_total_battery_charging_current_sensor_->publish_state(parse_float_(f[16]));
+    if (pgs_battery_capacity_sensor_ != nullptr)
+      pgs_battery_capacity_sensor_->publish_state(parse_float_(f[17]));
+    if (pgs_pv1_input_power_sensor_ != nullptr)
+      pgs_pv1_input_power_sensor_->publish_state(parse_float_(f[18]));
+    if (pgs_pv2_input_power_sensor_ != nullptr)
+      pgs_pv2_input_power_sensor_->publish_state(parse_float_(f[19]));
+    if (pgs_pv1_input_voltage_sensor_ != nullptr)
+      pgs_pv1_input_voltage_sensor_->publish_state(parse_float_(f[20], 0.1f));
+    if (pgs_pv2_input_voltage_sensor_ != nullptr)
+      pgs_pv2_input_voltage_sensor_->publish_state(parse_float_(f[21], 0.1f));
+    if (pgs_max_temperature_sensor_ != nullptr)
+      pgs_max_temperature_sensor_->publish_state(parse_float_(f[28]));
+  }
 
   // Helper string conversions reused across PGS/per-phase
   auto work_mode_str = [](int m) -> const char * {
