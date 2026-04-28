@@ -745,7 +745,7 @@ void PI18Component::decode_piri_(const std::vector<std::string> &f) {
   pub_sel(solar_power_priority_select_, SPP, 2, parse_int_(f[23]));
   {
     int bt = parse_int_(f[13]);
-    ESP_LOGD(TAG, "PIRI battery_type raw=%d", bt);
+    ESP_LOGV(TAG, "PIRI battery_type raw=%d", bt);
     pub_sel(battery_type_select_, BTP, 9, bt);
   }
   pub_sel(input_voltage_range_select_, IVR, 2, parse_int_(f[16]));
@@ -759,7 +759,7 @@ void PI18Component::decode_piri_(const std::vector<std::string> &f) {
     else if (v == 2200) vopt = "220V";
     else if (v == 2300) vopt = "230V";
     else if (v == 2400) vopt = "240V";
-    ESP_LOGD(TAG, "PIRI ac_output_rating_voltage raw=%d -> %s", v, vopt ? vopt : "unknown");
+    ESP_LOGV(TAG, "PIRI ac_output_rating_voltage raw=%d -> %s", v, vopt ? vopt : "unknown");
     if (vopt) ac_output_voltage_select_->publish_state(vopt);
   }
 
