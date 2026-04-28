@@ -236,7 +236,7 @@ SENSOR_SCHEMAS = {
     CONF_L3_BATTERY_DISCHARGE_CURRENT: sensor.sensor_schema(unit_of_measurement=UNIT_AMPERE, accuracy_decimals=0, device_class=DEVICE_CLASS_CURRENT, state_class=STATE_CLASS_MEASUREMENT),
     CONF_L3_BATTERY_CHARGING_CURRENT: sensor.sensor_schema(unit_of_measurement=UNIT_AMPERE, accuracy_decimals=0, device_class=DEVICE_CLASS_CURRENT, state_class=STATE_CLASS_MEASUREMENT),
     # ET / EY / EM / ED
-    CONF_TOTAL_GENERATED_ENERGY: sensor.sensor_schema(unit_of_measurement=UNIT_WATT_HOURS, accuracy_decimals=0, device_class=DEVICE_CLASS_ENERGY, state_class=STATE_CLASS_TOTAL_INCREASING),
+    CONF_TOTAL_GENERATED_ENERGY: sensor.sensor_schema(unit_of_measurement="kWh", accuracy_decimals=0, device_class=DEVICE_CLASS_ENERGY, state_class=STATE_CLASS_TOTAL_INCREASING),
     CONF_YEARLY_ENERGY: sensor.sensor_schema(unit_of_measurement="kWh", accuracy_decimals=0, device_class=DEVICE_CLASS_ENERGY, state_class=STATE_CLASS_TOTAL_INCREASING),
     CONF_MONTHLY_ENERGY: sensor.sensor_schema(unit_of_measurement="kWh", accuracy_decimals=0, device_class=DEVICE_CLASS_ENERGY, state_class=STATE_CLASS_TOTAL_INCREASING),
     CONF_DAILY_ENERGY: sensor.sensor_schema(unit_of_measurement=UNIT_WATT_HOURS, accuracy_decimals=0, device_class=DEVICE_CLASS_ENERGY, state_class=STATE_CLASS_TOTAL_INCREASING),

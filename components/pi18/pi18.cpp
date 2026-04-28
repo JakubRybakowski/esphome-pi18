@@ -428,8 +428,18 @@ void PI18Component::dispatch_response_(const std::string &cmd, const std::string
     if (protocol_id_text_sensor_ != nullptr)
       protocol_id_text_sensor_->publish_state(data);
   } else if (cmd == "ID") {
-    if (serial_number_text_sensor_ != nullptr)
-      serial_number_text_sensor_->publish_state(data);
+    if (serial_number_text_sensor_ != nullptr) {
+      // Format: LLXXXX...XXXX where LL = valid digits length, max 20 X digits
+      if (data.size() >= 2) {
+        int valid_len = (data[0] - '0') * 10 + (data[1] - '0');
+        if (valid_len > 0 && (size_t)(2 + valid_len) <= data.size())
+          serial_number_text_sensor_->publish_state(data.substr(2, valid_len));
+        else
+          serial_number_text_sensor_->publish_state(data);
+      } else {
+        serial_number_text_sensor_->publish_state(data);
+      }
+    }
   } else if (cmd == "VFW") {
     if (firmware_version_text_sensor_ != nullptr)
       firmware_version_text_sensor_->publish_state(data);
