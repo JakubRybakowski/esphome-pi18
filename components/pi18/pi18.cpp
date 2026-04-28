@@ -688,8 +688,8 @@ void PI18Component::decode_piri_(const std::vector<std::string> &f) {
 
 #ifdef USE_SELECT
   // ── Sync select entities from PIRI numeric values ────────────────────────────
-  static const char *OPP[] = {"Utility-Solar-Battery", "Solar-Utility-Battery", "Solar-Battery-Utility"};
-  static const char *CSP[] = {"Utility-first", "Solar-first", "Solar-Utility", "Solar-only"};
+  static const char *OPP[] = {"Solar-Utility-Battery", "Solar-Battery-Utility"};
+  static const char *CSP[] = {"Solar-first", "Solar-and-Utility", "Only-solar"};
   static const char *SPP[] = {"Battery-Load", "Load-Battery"};
   static const char *BTP[] = {"AGM", "Flooded", "User-defined", "Pylontech", "WECO", "Soltaro", "LIB-compatible", "Lithium", "LIB-protocol"};
   static const char *IVR[] = {"Appliance", "UPS"};
@@ -699,8 +699,8 @@ void PI18Component::decode_piri_(const std::vector<std::string> &f) {
     if (s != nullptr && idx >= 0 && (size_t) idx < n)
       s->publish_state(opts[idx]);
   };
-  pub_sel(output_source_priority_select_, OPP, 3, parse_int_(f[17]));
-  pub_sel(charger_source_priority_select_, CSP, 4, parse_int_(f[18]));
+  pub_sel(output_source_priority_select_, OPP, 2, parse_int_(f[17]));
+  pub_sel(charger_source_priority_select_, CSP, 3, parse_int_(f[18]));
   pub_sel(solar_power_priority_select_, SPP, 2, parse_int_(f[23]));
   {
     int bt = parse_int_(f[13]);

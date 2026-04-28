@@ -11,17 +11,15 @@ PI18Select = pi18_ns.class_("PI18Select", select.Select)
 # For commands with unit number: template uses %u (filled per parallel unit)
 
 OUTPUT_SOURCE_PRIORITY_OPTIONS = {
-    "Utility-Solar-Battery": "POP0",
-    "Solar-Utility-Battery": "POP1",
-    "Solar-Battery-Utility": "POP2",
+    "Solar-Utility-Battery": "POP0",  # SUB
+    "Solar-Battery-Utility": "POP1",  # SBU
 }
 
 # PCPm,n: m=parallel unit (multi_unit), n=priority
 CHARGER_SOURCE_PRIORITY_OPTIONS = {
-    "Utility-first":  "PCP%u,0",
-    "Solar-first":    "PCP%u,1",
-    "Solar-Utility":  "PCP%u,2",
-    "Solar-only":     "PCP%u,3",
+    "Solar-first":         "PCP%u,0",
+    "Solar-and-Utility":   "PCP%u,1",
+    "Only-solar":          "PCP%u,2",
 }
 
 SOLAR_POWER_PRIORITY_OPTIONS = {
