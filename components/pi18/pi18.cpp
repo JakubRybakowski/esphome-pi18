@@ -257,35 +257,64 @@ void PI18Component::update() {
 
   cycle_counter_++;
 
-  // 1) Background task due? (one-shot or period elapsed) — sent first.
-  for (auto &bg : bg_tasks_) {
-    if (bg.period_cycles == 0) {
-      if (bg.one_shot_done) continue;
-    } else {
-      uint32_t elapsed = bg.last_sent_cycle == 0 ? bg.period_cycles
-                                                 : (cycle_counter_ - bg.last_sent_cycle);
-      if (elapsed < bg.period_cycles) continue;
-    }
-    ESP_LOGD(TAG, "Polling [bg]: %s (period=%u, last=%u)",
-             bg.cmd.c_str(), bg.period_cycles, bg.last_sent_cycle);
-    last_sent_cmd_ = bg.cmd;
-    send_frame_(bg.cmd);
+  auto fire = [&](const std::string &cmd, const char *kind) {
+    ESP_LOGD(TAG, "Polling [%s]: %s", kind, cmd.c_str());
+    last_sent_cmd_ = cmd;
+    send_frame_(cmd);
     last_tx_ = millis();
     state_ = State::WAITING;
-    bg.last_sent_cycle = cycle_counter_;
-    bg.one_shot_done = true;
-    return;
+  };
+
+  // 1) Drain one-shot tasks first (PI, ID, VFW, ACCT, ACLT, T) — at boot only.
+  //    Highest priority so user sees static info quickly.
+  for (auto &bg : bg_tasks_) {
+    if (bg.period_cycles == 0 && !bg.one_shot_done) {
+      fire(bg.cmd, "once");
+      bg.last_sent_cycle = cycle_counter_;
+      bg.one_shot_done = true;
+      return;
+    }
   }
 
-  // 2) Otherwise rotate live list
+  // 2) BG slot: every 8th tick is reserved for periodic background tasks (12.5%).
+  //    Exception: if any periodic task is severely overdue (> 3x its period),
+  //    promote to BG slot immediately — keeps MOD/FWS/FLAG snappy when needed.
+  bool bg_overdue = false;
+  for (auto &bg : bg_tasks_) {
+    if (bg.period_cycles == 0 || bg.last_sent_cycle == 0) continue;
+    uint32_t elapsed = cycle_counter_ - bg.last_sent_cycle;
+    if (elapsed > 3 * bg.period_cycles) { bg_overdue = true; break; }
+  }
+  bool bg_slot = (cycle_counter_ % 8 == 0) || bg_overdue;
+  if (bg_slot) {
+    BgTask *chosen = nullptr;
+    uint32_t best_score = 0;  // higher = more overdue / never-sent
+    for (auto &bg : bg_tasks_) {
+      if (bg.period_cycles == 0) continue;  // one-shot, already drained
+      uint32_t score;
+      if (bg.last_sent_cycle == 0) {
+        score = 0xFFFFFFFFu;  // never sent — top priority
+      } else {
+        uint32_t elapsed = cycle_counter_ - bg.last_sent_cycle;
+        if (elapsed < bg.period_cycles) continue;  // not due
+        score = elapsed - bg.period_cycles;        // how overdue
+      }
+      if (chosen == nullptr || score > best_score) {
+        chosen = &bg;
+        best_score = score;
+      }
+    }
+    if (chosen != nullptr) {
+      fire(chosen->cmd, "bg");
+      chosen->last_sent_cycle = cycle_counter_;
+      return;
+    }
+  }
+
+  // 3) LIVE rotation — round-robin every other tick when no BG fires.
   if (live_commands_.empty()) return;
   const std::string &cmd = live_commands_[live_index_];
-  ESP_LOGD(TAG, "Polling [live %zu/%zu]: %s",
-           live_index_ + 1, live_commands_.size(), cmd.c_str());
-  last_sent_cmd_ = cmd;
-  send_frame_(cmd);
-  last_tx_ = millis();
-  state_ = State::WAITING;
+  fire(cmd, "live");
   live_index_ = (live_index_ + 1) % live_commands_.size();
 }
 
