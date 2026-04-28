@@ -6,6 +6,24 @@ from .. import PI18Component, CONF_PI18_ID, pi18_ns
 DEPENDENCIES = ["pi18"]
 
 PI18Select = pi18_ns.class_("PI18Select", select.Select)
+PI18VoltageSelect = pi18_ns.class_("PI18VoltageSelect", select.Select)
+
+# pair_role: 0=cutoff(PSDV) 1=bulk 2=float 3=recharge 4=redischarge
+VOLTAGE_SELECT_ENTRIES = {
+    "battery_bulk_voltage_select":        ("BULK", 1),
+    "battery_float_voltage_select":       ("FLOAT", 2),
+    "battery_recharge_voltage_select":    ("RECHARGE", 3),
+    "battery_redischarge_voltage_select": ("REDISCHARGE", 4),
+    "battery_cutoff_voltage_select":      ("CUTOFF", 0),
+}
+
+VOLTAGE_SELECT_SETTERS = {
+    "battery_bulk_voltage_select":        "set_battery_bulk_voltage_select",
+    "battery_float_voltage_select":       "set_battery_float_voltage_select",
+    "battery_recharge_voltage_select":    "set_battery_recharge_voltage_select",
+    "battery_redischarge_voltage_select": "set_battery_redischarge_voltage_select",
+    "battery_cutoff_voltage_select":      "set_battery_cutoff_voltage_select",
+}
 
 # ── Option → PI18 command mappings ────────────────────────────────────────────
 # For commands with unit number: template uses %u (filled per parallel unit)
@@ -99,6 +117,17 @@ OUTPUT_MODE_OPTIONS = {
     "Phase-3 of 3": "POPM0,4",
 }
 
+# ── Battery voltage selectable lists ──────────────────────────────────────────
+# Per PI18 spec for 48V system. Options are formatted as "XX.Y" voltage strings.
+BATTERY_RECHARGE_OPTIONS = [f"{v:.1f}" for v in (44.0, 45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0)]
+BATTERY_REDISCHARGE_OPTIONS = [f"{v:.1f}" for v in
+    (0.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0, 54.0, 55.0, 56.0, 57.0, 58.0)]
+# Cutoff: 40.0..48.0 step 0.5
+BATTERY_CUTOFF_OPTIONS = [f"{x/10:.1f}" for x in range(400, 481, 5)]
+# Bulk/Float: 48.0..58.4 step 0.4
+BATTERY_BULK_OPTIONS = [f"{x/10:.1f}" for x in range(480, 585, 4)]
+BATTERY_FLOAT_OPTIONS = BATTERY_BULK_OPTIONS
+
 # ── (key, options_dict, multi_unit) ───────────────────────────────────────────
 SELECT_ENTRIES = {
     "output_source_priority_select":   (OUTPUT_SOURCE_PRIORITY_OPTIONS,   False),
@@ -112,12 +141,26 @@ SELECT_ENTRIES = {
     "output_mode_select":              (OUTPUT_MODE_OPTIONS,              False),
 }
 
+def _voltage_options_for(key):
+    return {
+        "battery_bulk_voltage_select":        BATTERY_BULK_OPTIONS,
+        "battery_float_voltage_select":       BATTERY_FLOAT_OPTIONS,
+        "battery_recharge_voltage_select":    BATTERY_RECHARGE_OPTIONS,
+        "battery_redischarge_voltage_select": BATTERY_REDISCHARGE_OPTIONS,
+        "battery_cutoff_voltage_select":      BATTERY_CUTOFF_OPTIONS,
+    }[key]
+
+
 CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(CONF_PI18_ID): cv.use_id(PI18Component),
         **{
             cv.Optional(key): select.select_schema(PI18Select)
             for key in SELECT_ENTRIES
+        },
+        **{
+            cv.Optional(key): select.select_schema(PI18VoltageSelect)
+            for key in VOLTAGE_SELECT_ENTRIES
         },
     }
 )
@@ -151,3 +194,13 @@ async def to_code(config):
         setter = PIRI_SYNCED_SELECTS.get(key)
         if setter:
             cg.add(getattr(parent, setter)(var))
+
+    # Voltage selects (paired-command via PI18VoltageSelect)
+    for key, (_label, role) in VOLTAGE_SELECT_ENTRIES.items():
+        if key not in config:
+            continue
+        opts = _voltage_options_for(key)
+        var = await select.new_select(config[key], options=opts)
+        cg.add(var.set_parent(parent))
+        cg.add(var.set_pair_role(role))
+        cg.add(getattr(parent, VOLTAGE_SELECT_SETTERS[key])(var))

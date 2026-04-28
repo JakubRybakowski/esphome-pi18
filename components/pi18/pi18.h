@@ -87,6 +87,20 @@ class PI18Select : public select::Select {
   std::map<std::string, std::string> mappings_;
   bool multi_unit_{false};
 };
+
+// ─── Voltage select with paired-command support ──────────────────────────────
+// pair_role: 0=cutoff (PSDV)  1=bulk (MCHGV+float)  2=float (MCHGV+bulk)
+//            3=recharge (BUCD+redisch)  4=redischarge (BUCD+recharge)
+class PI18VoltageSelect : public select::Select {
+ public:
+  void set_parent(PI18Component *parent) { parent_ = parent; }
+  void set_pair_role(uint8_t role) { pair_role_ = role; }
+
+ protected:
+  void control(const std::string &value) override;
+  PI18Component *parent_{nullptr};
+  uint8_t pair_role_{0};
+};
 #endif  // USE_SELECT
 
 #ifdef USE_NUMBER
@@ -141,6 +155,11 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   void set_max_charging_current_select(select::Select *s) { max_charging_current_select_ = s; }
   void set_max_ac_charging_current_select(select::Select *s) { max_ac_charging_current_select_ = s; }
   void set_ac_output_voltage_select(select::Select *s) { ac_output_voltage_select_ = s; }
+  void set_battery_bulk_voltage_select(select::Select *s) { battery_bulk_voltage_select_ = s; }
+  void set_battery_float_voltage_select(select::Select *s) { battery_float_voltage_select_ = s; }
+  void set_battery_recharge_voltage_select(select::Select *s) { battery_recharge_voltage_select_ = s; }
+  void set_battery_redischarge_voltage_select(select::Select *s) { battery_redischarge_voltage_select_ = s; }
+  void set_battery_cutoff_voltage_select(select::Select *s) { battery_cutoff_voltage_select_ = s; }
 #endif  // USE_SELECT
 
   // ── Paired voltage handlers (called from PI18Number) ────────────────────────
@@ -414,6 +433,11 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   select::Select *max_charging_current_select_{nullptr};
   select::Select *max_ac_charging_current_select_{nullptr};
   select::Select *ac_output_voltage_select_{nullptr};
+  select::Select *battery_bulk_voltage_select_{nullptr};
+  select::Select *battery_float_voltage_select_{nullptr};
+  select::Select *battery_recharge_voltage_select_{nullptr};
+  select::Select *battery_redischarge_voltage_select_{nullptr};
+  select::Select *battery_cutoff_voltage_select_{nullptr};
 #endif  // USE_SELECT
 
 #ifdef USE_NUMBER

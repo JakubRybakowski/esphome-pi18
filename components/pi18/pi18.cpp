@@ -66,6 +66,24 @@ void PI18Select::control(const std::string &value) {
   }
   this->publish_state(value);
 }
+
+void PI18VoltageSelect::control(const std::string &value) {
+  if (parent_ == nullptr) return;
+  float v = (float) std::atof(value.c_str());
+  switch (pair_role_) {
+    case 0: {  // cutoff (PSDV mmm — 0.1V scaled)
+      char buf[16];
+      snprintf(buf, sizeof(buf), "PSDV%03d", (int)(v * 10 + 0.5f));
+      parent_->send_set_command(buf);
+      break;
+    }
+    case 1: parent_->handle_bulk_voltage(v); break;
+    case 2: parent_->handle_float_voltage(v); break;
+    case 3: parent_->handle_recharge_voltage(v); break;
+    case 4: parent_->handle_redischarge_voltage(v); break;
+  }
+  this->publish_state(value);
+}
 #endif  // USE_SELECT
 
 #ifdef USE_NUMBER
@@ -696,6 +714,12 @@ void PI18Component::decode_piri_(const std::vector<std::string> &f) {
   if (battery_recharge_voltage_number_ != nullptr)
     battery_recharge_voltage_number_->publish_state(recharge_v);
 #endif
+#ifdef USE_SELECT
+  if (battery_recharge_voltage_select_ != nullptr) {
+    char buf[8]; snprintf(buf, sizeof(buf), "%.1f", recharge_v);
+    battery_recharge_voltage_select_->publish_state(buf);
+  }
+#endif
 
   // f[9] = battery redischarge voltage
   float redischarge_v = parse_float_(f[9], 0.1f);
@@ -709,6 +733,12 @@ void PI18Component::decode_piri_(const std::vector<std::string> &f) {
   if (battery_redischarge_voltage_number_ != nullptr)
     battery_redischarge_voltage_number_->publish_state(redischarge_v);
 #endif
+#ifdef USE_SELECT
+  if (battery_redischarge_voltage_select_ != nullptr) {
+    char buf[8]; snprintf(buf, sizeof(buf), "%.1f", redischarge_v);
+    battery_redischarge_voltage_select_->publish_state(buf);
+  }
+#endif
 
   float under_v = parse_float_(f[10], 0.1f);
   if (battery_under_voltage_sensor_ != nullptr)
@@ -716,6 +746,12 @@ void PI18Component::decode_piri_(const std::vector<std::string> &f) {
 #ifdef USE_NUMBER
   if (battery_cutoff_voltage_number_ != nullptr)
     battery_cutoff_voltage_number_->publish_state(under_v);
+#endif
+#ifdef USE_SELECT
+  if (battery_cutoff_voltage_select_ != nullptr) {
+    char buf[8]; snprintf(buf, sizeof(buf), "%.1f", under_v);
+    battery_cutoff_voltage_select_->publish_state(buf);
+  }
 #endif
 
   // f[11] = bulk voltage
@@ -730,6 +766,12 @@ void PI18Component::decode_piri_(const std::vector<std::string> &f) {
   if (battery_bulk_voltage_number_ != nullptr)
     battery_bulk_voltage_number_->publish_state(bulk_v);
 #endif
+#ifdef USE_SELECT
+  if (battery_bulk_voltage_select_ != nullptr) {
+    char buf[8]; snprintf(buf, sizeof(buf), "%.1f", bulk_v);
+    battery_bulk_voltage_select_->publish_state(buf);
+  }
+#endif
 
   // f[12] = float voltage
   float float_v = parse_float_(f[12], 0.1f);
@@ -742,6 +784,12 @@ void PI18Component::decode_piri_(const std::vector<std::string> &f) {
   }
   if (battery_float_voltage_number_ != nullptr)
     battery_float_voltage_number_->publish_state(float_v);
+#endif
+#ifdef USE_SELECT
+  if (battery_float_voltage_select_ != nullptr) {
+    char buf[8]; snprintf(buf, sizeof(buf), "%.1f", float_v);
+    battery_float_voltage_select_->publish_state(buf);
+  }
 #endif
   if (battery_type_sensor_ != nullptr)
     battery_type_sensor_->publish_state(parse_float_(f[13]));
