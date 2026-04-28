@@ -285,7 +285,7 @@ void PI18Component::update() {
     uint32_t elapsed = cycle_counter_ - bg.last_sent_cycle;
     if (elapsed > 3 * bg.period_cycles) { bg_overdue = true; break; }
   }
-  bool bg_slot = (cycle_counter_ % 8 == 0) || bg_overdue;
+  bool bg_slot = (cycle_counter_ % 30 == 0) || bg_overdue;
   if (bg_slot) {
     BgTask *chosen = nullptr;
     uint32_t best_score = 0;  // higher = more overdue / never-sent
@@ -338,16 +338,17 @@ void PI18Component::build_poll_commands_() {
     bg_tasks_.push_back({cmd, period, 0, false});
   };
 
-  // ── MEDIUM (~20s) ───────────────────────────────────────────────────────────
-  add_bg("MOD",  4);
-  add_bg("FWS",  4);
-  add_bg("FLAG", 4);
+  // Periods are in ticks (= update_interval seconds, default 1s).
+  // ── MEDIUM (~60s) ───────────────────────────────────────────────────────────
+  add_bg("MOD",  60);
+  add_bg("FWS",  60);
+  add_bg("FLAG", 60);
 
-  // ── SLOW (~60s) ─────────────────────────────────────────────────────────────
-  add_bg("PIRI", 12);
+  // ── SLOW (~5min) ────────────────────────────────────────────────────────────
+  add_bg("PIRI", 300);
 
-  // ── HOURLY (~1h) — only if sensors configured ──────────────────────────────
-  if (total_generated_energy_sensor_ != nullptr) add_bg("ET", 720);
+  // ── HOURLY — only if sensors configured ────────────────────────────────────
+  if (total_generated_energy_sensor_ != nullptr) add_bg("ET", 3600);
 
   // ── ONCE — read once at boot, rarely changes ───────────────────────────────
   if (ac_charge_time_bucket_text_sensor_ != nullptr) add_bg("ACCT", 0);
@@ -374,7 +375,7 @@ void PI18Component::build_poll_commands_() {
       }
       if (daily_energy_sensor_ != nullptr) {
         snprintf(buf, sizeof(buf), "ED%04d%02d%02d", now.year, now.month, now.day_of_month);
-        add_bg(buf, 60);  // refresh more often (~5min) for live daily totals
+        add_bg(buf, 300);  // ~5 min for daily totals
       }
       last_built_yday_ = now.day_of_year;
     }
