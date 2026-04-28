@@ -104,13 +104,16 @@ void PI18Number::control(float value) {
   }
   this->publish_state(value);
 }
+#endif  // USE_NUMBER
 
-// ─── PI18Component: paired voltage handlers ───────────────────────────────────
+// ─── PI18Component: paired voltage handlers (used by Number AND Voltage Select) ──
 void PI18Component::handle_bulk_voltage(float v) {
   stored_bulk_voltage_ = v;
   stored_bulk_valid_ = true;
+#ifdef USE_NUMBER
   if (battery_bulk_voltage_number_ != nullptr)
     battery_bulk_voltage_number_->publish_state(v);
+#endif
   if (stored_float_valid_) {
     char buf[32];
     snprintf(buf, sizeof(buf), "MCHGV%03d,%03d",
@@ -123,8 +126,10 @@ void PI18Component::handle_bulk_voltage(float v) {
 void PI18Component::handle_float_voltage(float v) {
   stored_float_voltage_ = v;
   stored_float_valid_ = true;
+#ifdef USE_NUMBER
   if (battery_float_voltage_number_ != nullptr)
     battery_float_voltage_number_->publish_state(v);
+#endif
   if (stored_bulk_valid_) {
     char buf[32];
     snprintf(buf, sizeof(buf), "MCHGV%03d,%03d",
@@ -137,8 +142,10 @@ void PI18Component::handle_float_voltage(float v) {
 void PI18Component::handle_recharge_voltage(float v) {
   stored_recharge_voltage_ = v;
   stored_recharge_valid_ = true;
+#ifdef USE_NUMBER
   if (battery_recharge_voltage_number_ != nullptr)
     battery_recharge_voltage_number_->publish_state(v);
+#endif
   if (stored_redischarge_valid_) {
     char buf[32];
     snprintf(buf, sizeof(buf), "BUCD%03d,%03d",
@@ -151,8 +158,10 @@ void PI18Component::handle_recharge_voltage(float v) {
 void PI18Component::handle_redischarge_voltage(float v) {
   stored_redischarge_voltage_ = v;
   stored_redischarge_valid_ = true;
+#ifdef USE_NUMBER
   if (battery_redischarge_voltage_number_ != nullptr)
     battery_redischarge_voltage_number_->publish_state(v);
+#endif
   if (stored_recharge_valid_) {
     char buf[32];
     snprintf(buf, sizeof(buf), "BUCD%03d,%03d",
@@ -161,7 +170,6 @@ void PI18Component::handle_redischarge_voltage(float v) {
     send_set_command(buf);
   }
 }
-#endif  // USE_NUMBER
 
 // ─── Setup ────────────────────────────────────────────────────────────────────
 void PI18Component::setup() {

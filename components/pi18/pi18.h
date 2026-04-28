@@ -143,7 +143,6 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   // ── Send a raw PI18 set command (used by switches/selects/numbers) ──────────
   void send_set_command(const std::string &cmd);
 
-#ifdef USE_NUMBER
 #ifdef USE_SELECT
   // ── Select entity pointers (for syncing state from PIRI reads) ───────────────
   void set_output_source_priority_select(select::Select *s) { output_source_priority_select_ = s; }
@@ -162,12 +161,13 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   void set_battery_cutoff_voltage_select(select::Select *s) { battery_cutoff_voltage_select_ = s; }
 #endif  // USE_SELECT
 
-  // ── Paired voltage handlers (called from PI18Number) ────────────────────────
+  // ── Paired voltage handlers (used by PI18Number AND PI18VoltageSelect) ──────
   void handle_bulk_voltage(float v);
   void handle_float_voltage(float v);
   void handle_recharge_voltage(float v);
   void handle_redischarge_voltage(float v);
 
+#ifdef USE_NUMBER
   // ── Number entity pointers (set by number/__init__.py) ──────────────────────
   void set_battery_bulk_voltage_number(number::Number *n) { battery_bulk_voltage_number_ = n; }
   void set_battery_float_voltage_number(number::Number *n) { battery_float_voltage_number_ = n; }
@@ -440,15 +440,7 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   select::Select *battery_cutoff_voltage_select_{nullptr};
 #endif  // USE_SELECT
 
-#ifdef USE_NUMBER
-  // ── Number entity pointers ───────────────────────────────────────────────────
-  number::Number *battery_bulk_voltage_number_{nullptr};
-  number::Number *battery_float_voltage_number_{nullptr};
-  number::Number *battery_recharge_voltage_number_{nullptr};
-  number::Number *battery_redischarge_voltage_number_{nullptr};
-  number::Number *battery_cutoff_voltage_number_{nullptr};
-
-  // ── Stored values for paired set commands ────────────────────────────────────
+  // ── Stored values for paired set commands (used by both Number & Voltage Select) ──
   // MCHGV (bulk + float) — initialized from PIRI, then kept in sync
   float stored_bulk_voltage_{0.0f};
   float stored_float_voltage_{0.0f};
@@ -459,6 +451,14 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   float stored_redischarge_voltage_{0.0f};
   bool stored_recharge_valid_{false};
   bool stored_redischarge_valid_{false};
+
+#ifdef USE_NUMBER
+  // ── Number entity pointers ───────────────────────────────────────────────────
+  number::Number *battery_bulk_voltage_number_{nullptr};
+  number::Number *battery_float_voltage_number_{nullptr};
+  number::Number *battery_recharge_voltage_number_{nullptr};
+  number::Number *battery_redischarge_voltage_number_{nullptr};
+  number::Number *battery_cutoff_voltage_number_{nullptr};
 #endif  // USE_NUMBER
 
   // Helpers
