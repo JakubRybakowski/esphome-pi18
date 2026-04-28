@@ -7,6 +7,7 @@
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/switch/switch.h"
+#include "esphome/components/time/real_time_clock.h"
 #ifdef USE_NUMBER
 #include "esphome/components/number/number.h"
 #endif
@@ -55,6 +56,16 @@ class PI18Button : public button::Button {
   void press_action() override;
   PI18Component *parent_{nullptr};
   std::string command_;
+};
+
+// ─── Set Date/Time button ─────────────────────────────────────────────────────
+class PI18SetDateTimeButton : public button::Button {
+ public:
+  void set_parent(PI18Component *parent) { parent_ = parent; }
+
+ protected:
+  void press_action() override;
+  PI18Component *parent_{nullptr};
 };
 #endif  // USE_BUTTON
 
@@ -106,6 +117,8 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   void set_watchdog_interval(uint32_t ms) { watchdog_interval_ = ms; }
   void set_parallel_units(uint8_t n) { parallel_units_ = n; }
   uint8_t get_parallel_units() const { return parallel_units_; }
+  void set_time(time::RealTimeClock *time) { time_ = time; }
+  void send_set_date_time();  // builds DAT command from time_ and enqueues
 
   // ── Lifecycle ───────────────────────────────────────────────────────────────
   void setup() override;
@@ -266,6 +279,9 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
 
   // ── ^P005ET sensor ───────────────────────────────────────────────────────────
   SUB_SENSOR(total_generated_energy)
+  SUB_SENSOR(yearly_energy)
+  SUB_SENSOR(monthly_energy)
+  SUB_SENSOR(daily_energy)
 
   // ── Binary sensors ^P005GS ───────────────────────────────────────────────────
   SUB_BINARY_SENSOR(setting_changed)
@@ -332,6 +348,9 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   SUB_TEXT_SENSOR(l3_battery_power_direction)
   SUB_TEXT_SENSOR(l3_dc_ac_power_direction)
   SUB_TEXT_SENSOR(l3_line_power_direction)
+  SUB_TEXT_SENSOR(ac_charge_time_bucket)
+  SUB_TEXT_SENSOR(ac_supply_load_time_bucket)
+  SUB_TEXT_SENSOR(device_time)
 
  protected:
   // ── Internals ────────────────────────────────────────────────────────────────
@@ -348,6 +367,10 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
 
   // Parallel config
   uint8_t parallel_units_{1};
+
+  // Optional time integration for date-parameterised queries (EY/EM/ED, DAT)
+  time::RealTimeClock *time_{nullptr};
+  int last_built_yday_{-1};   // yday when poll list was last built with dates
 
   // Poll state
   State state_{State::IDLE};
@@ -411,6 +434,12 @@ class PI18Component : public uart::UARTDevice, public PollingComponent {
   void decode_flag_(const std::vector<std::string> &f);
   void decode_pgs_(const std::vector<std::string> &f, uint8_t phase);
   void decode_et_(const std::vector<std::string> &f);
+  void decode_ey_(const std::vector<std::string> &f);
+  void decode_em_(const std::vector<std::string> &f);
+  void decode_ed_(const std::vector<std::string> &f);
+  void decode_acct_(const std::vector<std::string> &f);
+  void decode_aclt_(const std::vector<std::string> &f);
+  void decode_t_(const std::vector<std::string> &f);  // ^P004T device time
 
   // Parser helpers
   static std::vector<std::string> split_csv_(const std::string &s);

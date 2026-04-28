@@ -1,7 +1,7 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import uart
-from esphome.const import CONF_ID
+from esphome.components import uart, time as time_
+from esphome.const import CONF_ID, CONF_TIME_ID
 from esphome import pins
 
 CODEOWNERS = ["@JakubRybakowski"]
@@ -24,6 +24,7 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_WATCHDOG_PIN): pins.gpio_output_pin_schema,
             cv.Optional(CONF_WATCHDOG_INTERVAL, default="1s"): cv.positive_time_period_milliseconds,
             cv.Optional(CONF_PARALLEL_UNITS, default=1): cv.int_range(min=1, max=3),
+            cv.Optional(CONF_TIME_ID): cv.use_id(time_.RealTimeClock),
         }
     )
     .extend(uart.UART_DEVICE_SCHEMA)
@@ -42,3 +43,7 @@ async def to_code(config):
 
     cg.add(var.set_watchdog_interval(config[CONF_WATCHDOG_INTERVAL]))
     cg.add(var.set_parallel_units(config[CONF_PARALLEL_UNITS]))
+
+    if CONF_TIME_ID in config:
+        time_obj = await cg.get_variable(config[CONF_TIME_ID])
+        cg.add(var.set_time(time_obj))

@@ -36,6 +36,11 @@ TEXT_SENSORS = {
     "l3_battery_power_direction":    "set_l3_battery_power_direction_text_sensor",
     "l3_dc_ac_power_direction":      "set_l3_dc_ac_power_direction_text_sensor",
     "l3_line_power_direction":       "set_l3_line_power_direction_text_sensor",
+    # AC charge / supply load time buckets
+    "ac_charge_time_bucket":         "set_ac_charge_time_bucket_text_sensor",
+    "ac_supply_load_time_bucket":    "set_ac_supply_load_time_bucket_text_sensor",
+    # Current device time
+    "device_time":                   "set_device_time_text_sensor",
 }
 
 CONFIG_SCHEMA = cv.Schema(

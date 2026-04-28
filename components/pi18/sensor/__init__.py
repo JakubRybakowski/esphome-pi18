@@ -106,6 +106,10 @@ CONF_PGS_MPPT2_CHARGER_STATUS = "pgs_mppt2_charger_status"
 
 # ^P005ET
 CONF_TOTAL_GENERATED_ENERGY = "total_generated_energy"
+# ^P009EYyyyy / ^P011EMyyyymm / ^P013EDyyyymmdd
+CONF_YEARLY_ENERGY = "yearly_energy"
+CONF_MONTHLY_ENERGY = "monthly_energy"
+CONF_DAILY_ENERGY = "daily_energy"
 
 # Per-phase L1/L2/L3 (from PGS0/PGS1/PGS2)
 CONF_L1_AC_OUTPUT_VOLTAGE = "l1_ac_output_voltage"
@@ -231,8 +235,11 @@ SENSOR_SCHEMAS = {
     CONF_L2_BATTERY_CHARGING_CURRENT: sensor.sensor_schema(unit_of_measurement=UNIT_AMPERE, accuracy_decimals=0, device_class=DEVICE_CLASS_CURRENT, state_class=STATE_CLASS_MEASUREMENT),
     CONF_L3_BATTERY_DISCHARGE_CURRENT: sensor.sensor_schema(unit_of_measurement=UNIT_AMPERE, accuracy_decimals=0, device_class=DEVICE_CLASS_CURRENT, state_class=STATE_CLASS_MEASUREMENT),
     CONF_L3_BATTERY_CHARGING_CURRENT: sensor.sensor_schema(unit_of_measurement=UNIT_AMPERE, accuracy_decimals=0, device_class=DEVICE_CLASS_CURRENT, state_class=STATE_CLASS_MEASUREMENT),
-    # ET
+    # ET / EY / EM / ED
     CONF_TOTAL_GENERATED_ENERGY: sensor.sensor_schema(unit_of_measurement=UNIT_WATT_HOURS, accuracy_decimals=0, device_class=DEVICE_CLASS_ENERGY, state_class=STATE_CLASS_TOTAL_INCREASING),
+    CONF_YEARLY_ENERGY: sensor.sensor_schema(unit_of_measurement="kWh", accuracy_decimals=0, device_class=DEVICE_CLASS_ENERGY, state_class=STATE_CLASS_TOTAL_INCREASING),
+    CONF_MONTHLY_ENERGY: sensor.sensor_schema(unit_of_measurement="kWh", accuracy_decimals=0, device_class=DEVICE_CLASS_ENERGY, state_class=STATE_CLASS_TOTAL_INCREASING),
+    CONF_DAILY_ENERGY: sensor.sensor_schema(unit_of_measurement=UNIT_WATT_HOURS, accuracy_decimals=0, device_class=DEVICE_CLASS_ENERGY, state_class=STATE_CLASS_TOTAL_INCREASING),
     # Per-phase L1
     CONF_L1_AC_OUTPUT_VOLTAGE: sensor.sensor_schema(unit_of_measurement=UNIT_VOLT, accuracy_decimals=1, device_class=DEVICE_CLASS_VOLTAGE, state_class=STATE_CLASS_MEASUREMENT),
     CONF_L1_AC_OUTPUT_FREQUENCY: sensor.sensor_schema(unit_of_measurement=UNIT_HERTZ, accuracy_decimals=1, state_class=STATE_CLASS_MEASUREMENT),
@@ -358,6 +365,9 @@ SENSOR_SETTERS = {
     CONF_L3_BATTERY_DISCHARGE_CURRENT: "set_l3_battery_discharge_current_sensor",
     CONF_L3_BATTERY_CHARGING_CURRENT: "set_l3_battery_charging_current_sensor",
     CONF_TOTAL_GENERATED_ENERGY: "set_total_generated_energy_sensor",
+    CONF_YEARLY_ENERGY: "set_yearly_energy_sensor",
+    CONF_MONTHLY_ENERGY: "set_monthly_energy_sensor",
+    CONF_DAILY_ENERGY: "set_daily_energy_sensor",
     # Per-phase L1
     CONF_L1_AC_OUTPUT_VOLTAGE: "set_l1_ac_output_voltage_sensor",
     CONF_L1_AC_OUTPUT_FREQUENCY: "set_l1_ac_output_frequency_sensor",

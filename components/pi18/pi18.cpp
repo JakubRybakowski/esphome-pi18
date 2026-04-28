@@ -30,6 +30,11 @@ void PI18Button::press_action() {
   if (!command_.empty() && parent_ != nullptr)
     parent_->send_set_command(command_);
 }
+
+void PI18SetDateTimeButton::press_action() {
+  if (parent_ != nullptr)
+    parent_->send_set_date_time();
+}
 #endif  // USE_BUTTON
 
 // ─── PI18Switch ───────────────────────────────────────────────────────────────
@@ -234,6 +239,22 @@ void PI18Component::loop() {
 
 // ─── Update (called on polling interval) ─────────────────────────────────────
 void PI18Component::update() {
+  // Rebuild date-parameterised poll commands when day changes (or first time
+  // time becomes valid after boot before time sync).
+  if (time_ != nullptr) {
+    auto now = time_->now();
+    if (now.is_valid() && now.day_of_year != last_built_yday_ &&
+        (yearly_energy_sensor_ != nullptr || monthly_energy_sensor_ != nullptr ||
+         daily_energy_sensor_ != nullptr)) {
+      ESP_LOGI(TAG, "Time-driven rebuild of poll list (yday %d -> %d)",
+               last_built_yday_, now.day_of_year);
+      auto saved_index = poll_index_;
+      build_poll_commands_();
+      if (saved_index < poll_commands_.size()) poll_index_ = saved_index;
+      else poll_index_ = 0;
+    }
+  }
+
   if (poll_commands_.empty()) return;
 
   if (state_ != State::IDLE) {
@@ -272,6 +293,56 @@ void PI18Component::build_poll_commands_() {
     poll_commands_.push_back("ID");
   if (firmware_version_text_sensor_ != nullptr)
     poll_commands_.push_back("VFW");
+
+  // AC charge / supply load time buckets — static commands
+  if (ac_charge_time_bucket_text_sensor_ != nullptr)
+    poll_commands_.push_back("ACCT");
+  if (ac_supply_load_time_bucket_text_sensor_ != nullptr)
+    poll_commands_.push_back("ACLT");
+
+  // Device time
+  if (device_time_text_sensor_ != nullptr)
+    poll_commands_.push_back("T");
+
+  // Date-parameterised energy queries — only if time component is available
+  if (time_ != nullptr) {
+    auto now = time_->now();
+    if (now.is_valid()) {
+      char buf[16];
+      if (yearly_energy_sensor_ != nullptr) {
+        snprintf(buf, sizeof(buf), "EY%04d", now.year);
+        poll_commands_.push_back(buf);
+      }
+      if (monthly_energy_sensor_ != nullptr) {
+        snprintf(buf, sizeof(buf), "EM%04d%02d", now.year, now.month);
+        poll_commands_.push_back(buf);
+      }
+      if (daily_energy_sensor_ != nullptr) {
+        snprintf(buf, sizeof(buf), "ED%04d%02d%02d", now.year, now.month, now.day_of_month);
+        poll_commands_.push_back(buf);
+      }
+      last_built_yday_ = now.day_of_year;
+    }
+  }
+}
+
+void PI18Component::send_set_date_time() {
+  if (time_ == nullptr) {
+    ESP_LOGW(TAG, "send_set_date_time: no time component configured");
+    return;
+  }
+  auto now = time_->now();
+  if (!now.is_valid()) {
+    ESP_LOGW(TAG, "send_set_date_time: time is not valid yet");
+    return;
+  }
+  char buf[24];
+  // ^S018DATyymmddhhffss
+  snprintf(buf, sizeof(buf), "DAT%02d%02d%02d%02d%02d%02d",
+           now.year % 100, now.month, now.day_of_month,
+           now.hour, now.minute, now.second);
+  ESP_LOGI(TAG, "Setting inverter time: %s", buf);
+  send_set_command(buf);
 }
 
 // ─── Frame builder ────────────────────────────────────────────────────────────
@@ -362,6 +433,18 @@ void PI18Component::dispatch_response_(const std::string &cmd, const std::string
   } else if (cmd == "VFW") {
     if (firmware_version_text_sensor_ != nullptr)
       firmware_version_text_sensor_->publish_state(data);
+  } else if (cmd == "ACCT") {
+    decode_acct_(fields);
+  } else if (cmd == "ACLT") {
+    decode_aclt_(fields);
+  } else if (cmd == "T") {
+    decode_t_(fields);
+  } else if (cmd.size() >= 6 && cmd.substr(0, 2) == "EY") {
+    decode_ey_(fields);
+  } else if (cmd.size() >= 8 && cmd.substr(0, 2) == "EM") {
+    decode_em_(fields);
+  } else if (cmd.size() >= 10 && cmd.substr(0, 2) == "ED") {
+    decode_ed_(fields);
   }
 }
 
@@ -939,6 +1022,64 @@ std::string PI18Component::fault_code_str_(int code) {
     case 86: return "Parallel output setting different";
     default: return "Unknown fault " + to_string(code);
   }
+}
+
+// ─── Decoder: ^P009EYyyyy — Yearly generated energy (kWh) ────────────────────
+void PI18Component::decode_ey_(const std::vector<std::string> &f) {
+  if (f.empty()) return;
+  if (yearly_energy_sensor_ != nullptr)
+    yearly_energy_sensor_->publish_state(parse_float_(f[0]));
+}
+
+// ─── Decoder: ^P011EMyyyymm — Monthly generated energy (kWh) ─────────────────
+void PI18Component::decode_em_(const std::vector<std::string> &f) {
+  if (f.empty()) return;
+  if (monthly_energy_sensor_ != nullptr)
+    monthly_energy_sensor_->publish_state(parse_float_(f[0]));
+}
+
+// ─── Decoder: ^P013EDyyyymmdd — Daily generated energy (Wh) ──────────────────
+void PI18Component::decode_ed_(const std::vector<std::string> &f) {
+  if (f.empty()) return;
+  if (daily_energy_sensor_ != nullptr)
+    daily_energy_sensor_->publish_state(parse_float_(f[0]));
+}
+
+// ─── Decoder: ^P005ACCT — AC charge time bucket (HH:MM,HH:MM) ────────────────
+void PI18Component::decode_acct_(const std::vector<std::string> &f) {
+  if (f.size() < 2) return;
+  if (ac_charge_time_bucket_text_sensor_ == nullptr) return;
+  // Each field is "HHMM"; format as "HH:MM-HH:MM"
+  auto fmt = [](const std::string &s) -> std::string {
+    if (s.size() != 4) return s;
+    return s.substr(0, 2) + ":" + s.substr(2, 2);
+  };
+  ac_charge_time_bucket_text_sensor_->publish_state(fmt(f[0]) + "-" + fmt(f[1]));
+}
+
+// ─── Decoder: ^P005ACLT — AC supply load time bucket ─────────────────────────
+void PI18Component::decode_aclt_(const std::vector<std::string> &f) {
+  if (f.size() < 2) return;
+  if (ac_supply_load_time_bucket_text_sensor_ == nullptr) return;
+  auto fmt = [](const std::string &s) -> std::string {
+    if (s.size() != 4) return s;
+    return s.substr(0, 2) + ":" + s.substr(2, 2);
+  };
+  ac_supply_load_time_bucket_text_sensor_->publish_state(fmt(f[0]) + "-" + fmt(f[1]));
+}
+
+// ─── Decoder: ^P004T — Device time YYYYMMDDHHFFSS ────────────────────────────
+void PI18Component::decode_t_(const std::vector<std::string> &f) {
+  if (f.empty()) return;
+  if (device_time_text_sensor_ == nullptr) return;
+  const std::string &s = f[0];
+  if (s.size() != 14) {
+    device_time_text_sensor_->publish_state(s);
+    return;
+  }
+  std::string out = s.substr(0, 4) + "-" + s.substr(4, 2) + "-" + s.substr(6, 2) +
+                    " " + s.substr(8, 2) + ":" + s.substr(10, 2) + ":" + s.substr(12, 2);
+  device_time_text_sensor_->publish_state(out);
 }
 
 }  // namespace pi18
